@@ -16,6 +16,7 @@
 
 package top.continew.admin.system.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -81,8 +82,8 @@ public class UserMessageController {
     @GetMapping("/{id}")
     public MessageDetailResp getMessage(@PathVariable Long id) {
         MessageDetailResp detail = messageService.get(id);
-        CheckUtils.throwIf(detail == null || (NoticeScopeEnum.USER.equals(detail.getScope()) && !detail.getUsers()
-            .contains(UserContextHolder.getUserId().toString())), "消息不存在或无权限访问");
+        CheckUtils.throwIf(detail == null || (NoticeScopeEnum.USER.equals(detail.getScope()) && !CollUtil
+            .contains(detail.getUsers(), UserContextHolder.getUserId().toString())), "消息不存在或无权限访问");
         messageService.readMessage(Collections.singletonList(id), UserContextHolder.getUserId());
         detail.setIsRead(true);
         return detail;
