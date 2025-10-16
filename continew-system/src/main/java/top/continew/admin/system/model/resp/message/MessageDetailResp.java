@@ -82,20 +82,14 @@ public class MessageDetailResp implements Serializable {
     private List<String> users;
 
     /**
-     * 是否已读
-     */
-    @Schema(description = "是否已读", example = "true")
-    private Boolean isRead;
-
-    /**
-     * 读取时间
-     */
-    @Schema(description = "读取时间", example = "2023-08-08 23:59:59", type = "string")
-    private LocalDateTime readTime;
-
-    /**
      * 创建时间
      */
     @Schema(description = "创建时间", example = "2023-08-08 08:08:08", type = "string")
     private LocalDateTime createTime;
+
+    /**
+     * 是否已读
+     */
+    @Schema(description = "是否已读", example = "true")
+    private Boolean isRead;
 }

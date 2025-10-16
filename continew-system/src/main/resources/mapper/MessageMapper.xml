@@ -18,12 +18,12 @@
             t2.read_time IS NOT NULL AS isRead,
             t2.read_time AS readTime
         FROM sys_message AS t1
-        LEFT JOIN sys_message_log AS t2 ON t2.message_id = t1.id
+        LEFT JOIN sys_message_log AS t2 ON t2.message_id = t1.id <if test="query.userId != null">AND t2.user_id = #{query.userId}</if>
         <where>
             <if test="query.userId != null">
                 <choose>
                     <when test="_databaseId == 'mysql'">
-                        (t1.scope = 1 OR (t1.scope = 2 AND JSON_EXTRACT(t1.users, "$[0]") = CAST(#{query.userId} AS CHAR)))
+                        (t1.scope = 1 OR (t1.scope = 2 AND JSON_CONTAINS(t1.users, CONCAT('"', #{query.userId}, '"'))))
                     </when>
                     <when test="_databaseId == 'pgsql'">
                         (t1.scope = 1 OR (t1.scope = 2 AND t1.users::jsonb @> jsonb_build_array(#{query.userId}::text)))
@@ -52,11 +52,8 @@
             t1.path,
             t1.scope,
             t1.users,
-            t1.create_time,
-            t2.read_time IS NOT NULL AS isRead,
-            t2.read_time AS readTime
+            t1.create_time
         FROM sys_message AS t1
-        LEFT JOIN sys_message_log AS t2 ON t2.message_id = t1.id
         WHERE t1.id = #{id}
     </select>
 
