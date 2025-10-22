@@ -135,3 +135,9 @@ VALUES
 (3023, '新增', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:create', 3, 1, 1, NOW()),
 (3024, '修改', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:update', 4, 1, 1, NOW()),
 (3025, '删除', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:delete', 5, 1, 1, NOW());
+
+-- changeset kai:20251022-01
+-- comment 重置租户场景索引
+ALTER TABLE `sys_user_social`
+DROP INDEX `uk_source_open_id`,
+    ADD UNIQUE INDEX `uk_source_open_id` (`source`, `open_id`, `tenant_id`);

@@ -30,11 +30,6 @@ public class SystemConstants {
     public static final Long SUPER_ADMIN_ROLE_ID = 1L;
 
     /**
-     * 顶级部门 ID
-     */
-    public static final Long SUPER_DEPT_ID = 1L;
-
-    /**
      * 全部权限标识
      */
     public static final String ALL_PERMISSION = "*:*:*";

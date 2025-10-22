@@ -60,7 +60,6 @@ import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.enums.GenderEnum;
 import top.continew.admin.common.util.SecureUtils;
-import top.continew.admin.system.constant.SystemConstants;
 import top.continew.admin.system.enums.OptionCategoryEnum;
 import top.continew.admin.system.mapper.user.UserMapper;
 import top.continew.admin.system.model.entity.DeptDO;
@@ -505,7 +504,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             .eq(status != null, "t1.status", status)
             .between(CollUtil.isNotEmpty(createTimeList), "t1.create_time", CollUtil.getFirst(createTimeList), CollUtil
                 .getLast(createTimeList))
-            .and(deptId != null && !SystemConstants.SUPER_DEPT_ID.equals(deptId), q -> {
+            .and(deptId != null, q -> {
                 List<Long> deptIdList = CollUtils.mapToList(deptService.listChildren(deptId), DeptDO::getId);
                 deptIdList.add(deptId);
                 q.in("t1.dept_id", deptIdList);
