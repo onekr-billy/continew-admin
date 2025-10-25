@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import top.continew.admin.schedule.annotation.ConditionalOnEnabledScheduleJob;
 import top.continew.admin.schedule.model.query.JobLogQuery;
 import top.continew.admin.schedule.model.resp.JobLogResp;
 import top.continew.admin.schedule.service.JobLogService;
@@ -39,6 +40,7 @@ import top.continew.starter.extension.crud.model.resp.PageResp;
 @Tag(name = " 任务日志 API")
 @RestController
 @RequiredArgsConstructor
+@ConditionalOnEnabledScheduleJob
 @RequestMapping("/schedule/log")
 public class JobLogController {
 

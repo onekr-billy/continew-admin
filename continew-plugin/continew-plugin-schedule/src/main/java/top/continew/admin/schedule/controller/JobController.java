@@ -25,6 +25,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import top.continew.admin.schedule.annotation.ConditionalOnEnabledScheduleJob;
 import top.continew.admin.schedule.model.query.JobQuery;
 import top.continew.admin.schedule.model.req.JobReq;
 import top.continew.admin.schedule.model.req.JobStatusReq;
@@ -48,6 +49,7 @@ import java.util.List;
 @Tag(name = " 任务 API")
 @RestController
 @RequiredArgsConstructor
+@ConditionalOnEnabledScheduleJob
 @RequestMapping("/schedule/job")
 public class JobController {
 
