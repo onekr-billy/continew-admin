@@ -22,12 +22,14 @@ CREATE TABLE IF NOT EXISTS "sys_menu" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE INDEX "idx_menu_parent_id"   ON "sys_menu" ("parent_id");
-CREATE INDEX "idx_menu_create_user" ON "sys_menu" ("create_user");
-CREATE INDEX "idx_menu_update_user" ON "sys_menu" ("update_user");
-CREATE UNIQUE INDEX "uk_menu_title_parent_id" ON "sys_menu" ("title", "parent_id");
+CREATE UNIQUE INDEX "uk_menu_title_parent_id" ON "sys_menu" ("title", "parent_id", "deleted");
+CREATE INDEX "idx_menu_parent_id"             ON "sys_menu" ("parent_id");
+CREATE INDEX "idx_menu_create_user"           ON "sys_menu" ("create_user");
+CREATE INDEX "idx_menu_update_user"           ON "sys_menu" ("update_user");
+CREATE INDEX "idx_menu_deleted"               ON "sys_menu" ("deleted");
 COMMENT ON COLUMN "sys_menu"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_menu"."title"       IS '标题';
 COMMENT ON COLUMN "sys_menu"."parent_id"   IS '上级菜单ID';
@@ -47,6 +49,7 @@ COMMENT ON COLUMN "sys_menu"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_menu"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_menu"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_menu"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_menu"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_menu"               IS '菜单表';
 
 CREATE TABLE IF NOT EXISTS "sys_dept" (
@@ -62,12 +65,14 @@ CREATE TABLE IF NOT EXISTS "sys_dept" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE INDEX "idx_dept_parent_id"   ON "sys_dept" ("parent_id");
-CREATE INDEX "idx_dept_create_user" ON "sys_dept" ("create_user");
-CREATE INDEX "idx_dept_update_user" ON "sys_dept" ("update_user");
-CREATE UNIQUE INDEX "uk_dept_name_parent_id" ON "sys_dept" ("name", "parent_id");
+CREATE UNIQUE INDEX "uk_dept_name_parent_id" ON "sys_dept" ("name", "parent_id", "deleted");
+CREATE INDEX "idx_dept_parent_id"            ON "sys_dept" ("parent_id");
+CREATE INDEX "idx_dept_create_user"          ON "sys_dept" ("create_user");
+CREATE INDEX "idx_dept_update_user"          ON "sys_dept" ("update_user");
+CREATE INDEX "idx_dept_deleted"              ON "sys_dept" ("deleted");
 COMMENT ON COLUMN "sys_dept"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_dept"."name"        IS '名称';
 COMMENT ON COLUMN "sys_dept"."parent_id"   IS '上级部门ID';
@@ -80,6 +85,7 @@ COMMENT ON COLUMN "sys_dept"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_dept"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_dept"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_dept"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_dept"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_dept"               IS '部门表';
 
 CREATE TABLE IF NOT EXISTS "sys_role" (
@@ -96,12 +102,14 @@ CREATE TABLE IF NOT EXISTS "sys_role" (
     "create_time"         timestamp    NOT NULL,
     "update_user"         int8         DEFAULT NULL,
     "update_time"         timestamp    DEFAULT NULL,
+    "deleted"             int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_role_name"  ON "sys_role" ("name");
-CREATE UNIQUE INDEX "uk_role_code"  ON "sys_role" ("code");
+CREATE UNIQUE INDEX "uk_role_name"  ON "sys_role" ("name", "deleted");
+CREATE UNIQUE INDEX "uk_role_code"  ON "sys_role" ("code", "deleted");
 CREATE INDEX "idx_role_create_user" ON "sys_role" ("create_user");
 CREATE INDEX "idx_role_update_user" ON "sys_role" ("update_user");
+CREATE INDEX "idx_role_deleted"     ON "sys_role" ("deleted");
 COMMENT ON COLUMN "sys_role"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_role"."name"        IS '名称';
 COMMENT ON COLUMN "sys_role"."code"        IS '编码';
@@ -115,6 +123,7 @@ COMMENT ON COLUMN "sys_role"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_role"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_role"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_role"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_role"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_role"               IS '角色表';
 
 CREATE TABLE IF NOT EXISTS "sys_user" (
@@ -135,14 +144,16 @@ CREATE TABLE IF NOT EXISTS "sys_user" (
     "create_time"    timestamp    NOT NULL,
     "update_user"    int8         DEFAULT NULL,
     "update_time"    timestamp    DEFAULT NULL,
+    "deleted"        int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_user_username" ON "sys_user" ("username");
-CREATE UNIQUE INDEX "uk_user_email"    ON "sys_user" ("email");
-CREATE UNIQUE INDEX "uk_user_phone"    ON "sys_user" ("phone");
+CREATE UNIQUE INDEX "uk_user_username" ON "sys_user" ("username", "deleted");
+CREATE UNIQUE INDEX "uk_user_email"    ON "sys_user" ("email", "deleted");
+CREATE UNIQUE INDEX "uk_user_phone"    ON "sys_user" ("phone", "deleted");
 CREATE INDEX "idx_user_dept_id"        ON "sys_user" ("dept_id");
 CREATE INDEX "idx_user_create_user"    ON "sys_user" ("create_user");
 CREATE INDEX "idx_user_update_user"    ON "sys_user" ("update_user");
+CREATE INDEX "idx_user_deleted"        ON "sys_user" ("deleted");
 COMMENT ON COLUMN "sys_user"."id"             IS 'ID';
 COMMENT ON COLUMN "sys_user"."username"       IS '用户名';
 COMMENT ON COLUMN "sys_user"."nickname"       IS '昵称';
@@ -160,6 +171,7 @@ COMMENT ON COLUMN "sys_user"."create_user"    IS '创建人';
 COMMENT ON COLUMN "sys_user"."create_time"    IS '创建时间';
 COMMENT ON COLUMN "sys_user"."update_user"    IS '修改人';
 COMMENT ON COLUMN "sys_user"."update_time"    IS '修改时间';
+COMMENT ON COLUMN "sys_user"."deleted"        IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_user"                  IS '用户表';
 
 CREATE TABLE IF NOT EXISTS "sys_user_password_history" (
@@ -184,9 +196,11 @@ CREATE TABLE IF NOT EXISTS "sys_user_social" (
     "meta_json"       text         DEFAULT NULL,
     "last_login_time" timestamp    DEFAULT NULL,
     "create_time"     timestamp    NOT NULL,
+    "update_time"     timestamp    DEFAULT NULL,
+    "deleted"         int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_user_source_open_id" ON "sys_user_social" ("source", "open_id");
+CREATE UNIQUE INDEX "uk_user_source_open_id" ON "sys_user_social" ("source", "open_id", "deleted");
 COMMENT ON COLUMN "sys_user_social"."id"              IS 'ID';
 COMMENT ON COLUMN "sys_user_social"."source"          IS '来源';
 COMMENT ON COLUMN "sys_user_social"."open_id"         IS '开放ID';
@@ -194,6 +208,8 @@ COMMENT ON COLUMN "sys_user_social"."user_id"         IS '用户ID';
 COMMENT ON COLUMN "sys_user_social"."meta_json"       IS '附加信息';
 COMMENT ON COLUMN "sys_user_social"."last_login_time" IS '最后登录时间';
 COMMENT ON COLUMN "sys_user_social"."create_time"     IS '创建时间';
+COMMENT ON COLUMN "sys_user_social"."update_time"     IS '修改时间';
+COMMENT ON COLUMN "sys_user_social"."deleted"         IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_user_social"                   IS '用户社会化关联表';
 
 CREATE TABLE IF NOT EXISTS "sys_user_role" (
@@ -260,10 +276,11 @@ CREATE TABLE IF NOT EXISTS "sys_dict" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_dict_name" ON "sys_dict" ("name");
-CREATE UNIQUE INDEX "uk_dict_code" ON "sys_dict" ("code");
+CREATE UNIQUE INDEX "uk_dict_name" ON "sys_dict" ("name", "deleted");
+CREATE UNIQUE INDEX "uk_dict_code" ON "sys_dict" ("code", "deleted");
 COMMENT ON COLUMN "sys_dict"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_dict"."name"        IS '名称';
 COMMENT ON COLUMN "sys_dict"."code"        IS '编码';
@@ -273,6 +290,7 @@ COMMENT ON COLUMN "sys_dict"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_dict"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_dict"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_dict"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_dict"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_dict"               IS '字典表';
 
 CREATE TABLE IF NOT EXISTS "sys_dict_item" (
@@ -288,12 +306,13 @@ CREATE TABLE IF NOT EXISTS "sys_dict_item" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_dict_item_value_dict_id" ON "sys_dict_item" ("value", "dict_id");
-CREATE INDEX "idx_dict_item_dict_id"     ON "sys_dict_item" ("dict_id");
-CREATE INDEX "idx_dict_item_create_user" ON "sys_dict_item" ("create_user");
-CREATE INDEX "idx_dict_item_update_user" ON "sys_dict_item" ("update_user");
+CREATE UNIQUE INDEX "uk_dict_item_value_dict_id" ON "sys_dict_item" ("value", "dict_id", "deleted");
+CREATE INDEX "idx_dict_item_dict_id"             ON "sys_dict_item" ("dict_id");
+CREATE INDEX "idx_dict_item_create_user"         ON "sys_dict_item" ("create_user");
+CREATE INDEX "idx_dict_item_update_user"         ON "sys_dict_item" ("update_user");
 COMMENT ON COLUMN "sys_dict_item"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_dict_item"."label"       IS '标签';
 COMMENT ON COLUMN "sys_dict_item"."value"       IS '值';
@@ -306,6 +325,7 @@ COMMENT ON COLUMN "sys_dict_item"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_dict_item"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_dict_item"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_dict_item"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_dict_item"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_dict_item"               IS '字典项表';
 
 CREATE TABLE IF NOT EXISTS "sys_log" (
@@ -366,8 +386,11 @@ CREATE TABLE IF NOT EXISTS "sys_message" (
     "scope"       int2         NOT NULL DEFAULT 1,
     "users"       json         DEFAULT NULL,
     "create_time" timestamp    NOT NULL,
+    "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
+CREATE INDEX "idx_message_deleted" ON "sys_message" ("deleted");
 COMMENT ON COLUMN "sys_message"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_message"."title"       IS '标题';
 COMMENT ON COLUMN "sys_message"."content"     IS '内容';
@@ -376,6 +399,8 @@ COMMENT ON COLUMN "sys_message"."path"        IS '跳转路径';
 COMMENT ON COLUMN "sys_message"."scope"       IS '通知范围（1：所有人；2：指定用户）';
 COMMENT ON COLUMN "sys_message"."users"       IS '通知用户';
 COMMENT ON COLUMN "sys_message"."create_time" IS '创建时间';
+COMMENT ON COLUMN "sys_message"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_message"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_message"               IS '消息表';
 
 CREATE TABLE IF NOT EXISTS "sys_message_log" (
@@ -405,10 +430,12 @@ CREATE TABLE IF NOT EXISTS "sys_notice" (
     "create_time"    timestamp    NOT NULL,
     "update_user"    int8         DEFAULT NULL,
     "update_time"    timestamp    DEFAULT NULL,
+    "deleted"        int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
 CREATE INDEX "idx_notice_create_user" ON "sys_notice" ("create_user");
 CREATE INDEX "idx_notice_update_user" ON "sys_notice" ("update_user");
+CREATE INDEX "idx_notice_deleted"     ON "sys_notice" ("deleted");
 COMMENT ON COLUMN "sys_notice"."id"             IS 'ID';
 COMMENT ON COLUMN "sys_notice"."title"          IS '标题';
 COMMENT ON COLUMN "sys_notice"."content"        IS '内容';
@@ -424,6 +451,7 @@ COMMENT ON COLUMN "sys_notice"."create_user"    IS '创建人';
 COMMENT ON COLUMN "sys_notice"."create_time"    IS '创建时间';
 COMMENT ON COLUMN "sys_notice"."update_user"    IS '修改人';
 COMMENT ON COLUMN "sys_notice"."update_time"    IS '修改时间';
+COMMENT ON COLUMN "sys_notice"."deleted"        IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_notice"                  IS '公告表';
 
 CREATE TABLE IF NOT EXISTS "sys_notice_log" (
@@ -455,11 +483,13 @@ CREATE TABLE IF NOT EXISTS "sys_storage" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_storage_code"  ON "sys_storage" ("code");
+CREATE UNIQUE INDEX "uk_storage_code"  ON "sys_storage" ("code", "deleted");
 CREATE INDEX "idx_storage_create_user" ON "sys_storage" ("create_user");
 CREATE INDEX "idx_storage_update_user" ON "sys_storage" ("update_user");
+CREATE INDEX "idx_storage_deleted"     ON "sys_storage" ("deleted");
 COMMENT ON COLUMN "sys_storage"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_storage"."name"        IS '名称';
 COMMENT ON COLUMN "sys_storage"."code"        IS '编码';
@@ -477,6 +507,7 @@ COMMENT ON COLUMN "sys_storage"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_storage"."create_time" IS '创建时间';
 COMMENT ON COLUMN "sys_storage"."update_user" IS '修改人';
 COMMENT ON COLUMN "sys_storage"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_storage"."deleted"     IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_storage"               IS '存储表';
 
 CREATE TABLE IF NOT EXISTS "sys_file" (
@@ -499,12 +530,15 @@ CREATE TABLE IF NOT EXISTS "sys_file" (
     "create_time"        timestamp    NOT NULL,
     "update_user"        int8         DEFAULT NULL,
     "update_time"        timestamp    DEFAULT NULL,
+    "deleted"            int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE INDEX "idx_file_type" ON "sys_file" ("type");
-CREATE INDEX "idx_file_sha256" ON "sys_file" ("sha256");
-CREATE INDEX "idx_file_storage_id" ON "sys_file" ("storage_id");
+CREATE INDEX "idx_file_type"        ON "sys_file" ("type");
+CREATE INDEX "idx_file_sha256"      ON "sys_file" ("sha256");
+CREATE INDEX "idx_file_storage_id"  ON "sys_file" ("storage_id");
 CREATE INDEX "idx_file_create_user" ON "sys_file" ("create_user");
+CREATE INDEX "idx_file_update_user" ON "sys_file" ("update_user");
+CREATE INDEX "idx_file_deleted"     ON "sys_file" ("deleted");
 COMMENT ON COLUMN "sys_file"."id"                 IS 'ID';
 COMMENT ON COLUMN "sys_file"."name"               IS '名称';
 COMMENT ON COLUMN "sys_file"."original_name"      IS '原始名称';
@@ -524,6 +558,7 @@ COMMENT ON COLUMN "sys_file"."create_user"        IS '创建人';
 COMMENT ON COLUMN "sys_file"."create_time"        IS '创建时间';
 COMMENT ON COLUMN "sys_file"."update_user"        IS '修改人';
 COMMENT ON COLUMN "sys_file"."update_time"        IS '修改时间';
+COMMENT ON COLUMN "sys_file"."deleted"            IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_file"                      IS '文件表';
 
 CREATE TABLE IF NOT EXISTS "sys_client" (
@@ -538,11 +573,13 @@ CREATE TABLE IF NOT EXISTS "sys_client" (
     "create_time"    timestamp    NOT NULL,
     "update_user"    int8         DEFAULT NULL,
     "update_time"    timestamp    DEFAULT NULL,
+    "deleted"        int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
 CREATE UNIQUE INDEX "uk_client_client_id" ON "sys_client" ("client_id");
-CREATE INDEX "idx_client_create_user" ON "sys_client" ("create_user");
-CREATE INDEX "idx_client_update_user" ON "sys_client" ("update_user");
+CREATE INDEX "idx_client_create_user"     ON "sys_client" ("create_user");
+CREATE INDEX "idx_client_update_user"     ON "sys_client" ("update_user");
+CREATE INDEX "idx_client_deleted"         ON "sys_client" ("deleted");
 COMMENT ON COLUMN "sys_client"."id"             IS 'ID';
 COMMENT ON COLUMN "sys_client"."client_id"      IS '客户端ID';
 COMMENT ON COLUMN "sys_client"."client_type"    IS '客户端类型';
@@ -554,6 +591,7 @@ COMMENT ON COLUMN "sys_client"."create_user"    IS '创建人';
 COMMENT ON COLUMN "sys_client"."create_time"    IS '创建时间';
 COMMENT ON COLUMN "sys_client"."update_user"    IS '修改人';
 COMMENT ON COLUMN "sys_client"."update_time"    IS '修改时间';
+COMMENT ON COLUMN "sys_client"."deleted"        IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE  "sys_client"                  IS '客户端表';
 
 CREATE TABLE IF NOT EXISTS "sys_sms_config" (
@@ -575,10 +613,12 @@ CREATE TABLE IF NOT EXISTS "sys_sms_config" (
     "create_time"     timestamp    NOT NULL,
     "update_user"     int8         DEFAULT NULL,
     "update_time"     timestamp    DEFAULT NULL,
+    "deleted"         int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
 CREATE INDEX "idx_sms_config_create_user" ON "sys_sms_config" ("create_user");
 CREATE INDEX "idx_sms_config_update_user" ON "sys_sms_config" ("update_user");
+CREATE INDEX "idx_sms_config_deleted"     ON "sys_sms_config" ("deleted");
 COMMENT ON COLUMN "sys_sms_config"."id"              IS 'ID';
 COMMENT ON COLUMN "sys_sms_config"."name"            IS '名称';
 COMMENT ON COLUMN "sys_sms_config"."supplier"        IS '厂商';
@@ -597,7 +637,8 @@ COMMENT ON COLUMN "sys_sms_config"."create_user"     IS '创建人';
 COMMENT ON COLUMN "sys_sms_config"."create_time"     IS '创建时间';
 COMMENT ON COLUMN "sys_sms_config"."update_user"     IS '修改人';
 COMMENT ON COLUMN "sys_sms_config"."update_time"     IS '修改时间';
-COMMENT ON TABLE "sys_sms_config" IS '短信配置表';
+COMMENT ON COLUMN "sys_sms_config"."deleted"         IS '是否已删除（0：否；id：是）';
+COMMENT ON TABLE "sys_sms_config"                    IS '短信配置表';
 
 CREATE TABLE IF NOT EXISTS "sys_sms_log" (
     "id"          int8        NOT NULL,
@@ -610,7 +651,7 @@ CREATE TABLE IF NOT EXISTS "sys_sms_log" (
     "create_time" timestamp   NOT NULL,
     PRIMARY KEY ("id")
 );
-CREATE INDEX "idx_sms_log_config_id" ON "sys_sms_log" ("config_id");
+CREATE INDEX "idx_sms_log_config_id"   ON "sys_sms_log" ("config_id");
 CREATE INDEX "idx_sms_log_create_user" ON "sys_sms_log" ("create_user");
 COMMENT ON COLUMN "sys_sms_log"."id"          IS 'ID';
 COMMENT ON COLUMN "sys_sms_log"."config_id"   IS '配置ID';
@@ -620,4 +661,4 @@ COMMENT ON COLUMN "sys_sms_log"."status"      IS '发送状态（1：成功；2�
 COMMENT ON COLUMN "sys_sms_log"."res_msg"     IS '返回数据';
 COMMENT ON COLUMN "sys_sms_log"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_sms_log"."create_time" IS '创建时间';
-COMMENT ON TABLE "sys_sms_log" IS '短信日志表';
+COMMENT ON TABLE "sys_sms_log"                IS '短信日志表';

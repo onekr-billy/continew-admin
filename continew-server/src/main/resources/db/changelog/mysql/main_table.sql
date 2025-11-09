@@ -3,7 +3,7 @@
 -- changeset charles7c:1
 -- comment 初始化表结构
 CREATE TABLE IF NOT EXISTS `sys_menu` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`          bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `title`       varchar(30)  NOT NULL                    COMMENT '标题',
     `parent_id`   bigint(20)   NOT NULL DEFAULT 0          COMMENT '上级菜单ID',
     `type`        tinyint(1)   UNSIGNED NOT NULL DEFAULT 1 COMMENT '类型（1：目录；2：菜单；3：按钮）',
@@ -22,15 +22,17 @@ CREATE TABLE IF NOT EXISTS `sys_menu` (
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
     `update_user` bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_title_parent_id`(`title`, `parent_id`),
+    UNIQUE INDEX `uk_title_parent_id`(`title`, `parent_id`, `deleted`),
     INDEX `idx_parent_id`(`parent_id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
 
 CREATE TABLE IF NOT EXISTS `sys_dept` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`          bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `name`        varchar(30)  NOT NULL                    COMMENT '名称',
     `parent_id`   bigint(20)   NOT NULL DEFAULT 0          COMMENT '上级部门ID',
     `ancestors`   varchar(512) NOT NULL DEFAULT ''         COMMENT '祖级列表',
@@ -42,36 +44,40 @@ CREATE TABLE IF NOT EXISTS `sys_dept` (
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
     `update_user` bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_name_parent_id`(`name`, `parent_id`),
+    UNIQUE INDEX `uk_name_parent_id`(`name`, `parent_id`, `deleted`),
     INDEX `idx_parent_id`(`parent_id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
 
 CREATE TABLE IF NOT EXISTS `sys_role` (
-    `id`                  bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `name`                varchar(30)  NOT NULL                COMMENT '名称',
-    `code`                varchar(30)  NOT NULL                COMMENT '编码',
-    `data_scope`          tinyint(1)   NOT NULL DEFAULT 4      COMMENT '数据权限（1：全部数据权限；2：本部门及以下数据权限；3：本部门数据权限；4：仅本人数据权限；5：自定义数据权限）',
-    `description`         varchar(200) DEFAULT NULL            COMMENT '描述',
-    `sort`                int          NOT NULL DEFAULT 999    COMMENT '排序',
-    `is_system`           bit(1)       NOT NULL DEFAULT b'0'   COMMENT '是否为系统内置数据',
-    `menu_check_strictly` bit(1)       DEFAULT b'1'            COMMENT '菜单选择是否父子节点关联',
-    `dept_check_strictly` bit(1)       DEFAULT b'1'            COMMENT '部门选择是否父子节点关联',
-    `create_user`         bigint(20)   NOT NULL                COMMENT '创建人',
-    `create_time`         datetime     NOT NULL                COMMENT '创建时间',
-    `update_user`         bigint(20)   DEFAULT NULL            COMMENT '修改人',
-    `update_time`         datetime     DEFAULT NULL            COMMENT '修改时间',
+    `id`                  bigint(20)   AUTO_INCREMENT        COMMENT 'ID',
+    `name`                varchar(30)  NOT NULL              COMMENT '名称',
+    `code`                varchar(30)  NOT NULL              COMMENT '编码',
+    `data_scope`          tinyint(1)   NOT NULL DEFAULT 4    COMMENT '数据权限（1：全部数据权限；2：本部门及以下数据权限；3：本部门数据权限；4：仅本人数据权限；5：自定义数据权限）',
+    `description`         varchar(200) DEFAULT NULL          COMMENT '描述',
+    `sort`                int          NOT NULL DEFAULT 999  COMMENT '排序',
+    `is_system`           bit(1)       NOT NULL DEFAULT b'0' COMMENT '是否为系统内置数据',
+    `menu_check_strictly` bit(1)       DEFAULT b'1'          COMMENT '菜单选择是否父子节点关联',
+    `dept_check_strictly` bit(1)       DEFAULT b'1'          COMMENT '部门选择是否父子节点关联',
+    `create_user`         bigint(20)   NOT NULL              COMMENT '创建人',
+    `create_time`         datetime     NOT NULL              COMMENT '创建时间',
+    `update_user`         bigint(20)   DEFAULT NULL          COMMENT '修改人',
+    `update_time`         datetime     DEFAULT NULL          COMMENT '修改时间',
+    `deleted`             bigint(20)   NOT NULL DEFAULT 0    COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_name`(`name`),
-    UNIQUE INDEX `uk_code`(`code`),
+    UNIQUE INDEX `uk_name`(`name`, `deleted`),
+    UNIQUE INDEX `uk_code`(`code`, `deleted`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 CREATE TABLE IF NOT EXISTS `sys_user` (
-    `id`             bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`             bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `username`       varchar(64)  NOT NULL                    COMMENT '用户名',
     `nickname`       varchar(30)  NOT NULL                    COMMENT '昵称',
     `password`       varchar(255) DEFAULT NULL                COMMENT '密码',
@@ -88,40 +94,45 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
     `create_time`    datetime     NOT NULL                    COMMENT '创建时间',
     `update_user`    bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time`    datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`        bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_username`(`username`),
-    UNIQUE INDEX `uk_email`(`email`),
-    UNIQUE INDEX `uk_phone`(`phone`),
+    UNIQUE INDEX `uk_username`(`username`, `deleted`),
+    UNIQUE INDEX `uk_email`(`email`, `deleted`),
+    UNIQUE INDEX `uk_phone`(`phone`, `deleted`),
     INDEX `idx_dept_id`(`dept_id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `sys_user_password_history` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `user_id`     bigint(20)   NOT NULL                COMMENT '用户ID',
-    `password`    varchar(255) NOT NULL                COMMENT '密码',
-    `create_time` datetime     NOT NULL                COMMENT '创建时间',
+    `id`          bigint(20)   AUTO_INCREMENT COMMENT 'ID',
+    `user_id`     bigint(20)   NOT NULL       COMMENT '用户ID',
+    `password`    varchar(255) NOT NULL       COMMENT '密码',
+    `create_time` datetime     NOT NULL       COMMENT '创建时间',
     PRIMARY KEY (`id`),
     INDEX `idx_user_id`(`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户历史密码表';
 
 CREATE TABLE IF NOT EXISTS `sys_user_social` (
-    `id`              bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `source`          varchar(255) NOT NULL                COMMENT '来源',
-    `open_id`         varchar(255) NOT NULL                COMMENT '开放ID',
-    `user_id`         bigint(20)   NOT NULL                COMMENT '用户ID',
-    `meta_json`       text         DEFAULT NULL            COMMENT '附加信息',
-    `last_login_time` datetime     DEFAULT NULL            COMMENT '最后登录时间',
-    `create_time`     datetime     NOT NULL                COMMENT '创建时间',
+    `id`              bigint(20)   AUTO_INCREMENT     COMMENT 'ID',
+    `source`          varchar(255) NOT NULL           COMMENT '来源',
+    `open_id`         varchar(255) NOT NULL           COMMENT '开放ID',
+    `user_id`         bigint(20)   NOT NULL           COMMENT '用户ID',
+    `meta_json`       text         DEFAULT NULL       COMMENT '附加信息',
+    `last_login_time` datetime     DEFAULT NULL       COMMENT '最后登录时间',
+    `create_time`     datetime     NOT NULL           COMMENT '创建时间',
+    `update_time`     datetime     DEFAULT NULL       COMMENT '修改时间',
+    `deleted`         bigint(20)   NOT NULL DEFAULT 0 COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_source_open_id`(`source`, `open_id`)
+    UNIQUE INDEX `uk_source_open_id`(`source`, `open_id`, `deleted`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户社会化关联表';
 
 CREATE TABLE IF NOT EXISTS `sys_user_role` (
-    `id`      bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `user_id` bigint(20) NOT NULL COMMENT '用户ID',
-    `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+    `id`      bigint(20) AUTO_INCREMENT COMMENT 'ID',
+    `user_id` bigint(20) NOT NULL       COMMENT '用户ID',
+    `role_id` bigint(20) NOT NULL       COMMENT '角色ID',
     PRIMARY KEY (`id`),
     UNIQUE INDEX `uk_user_id_role_id`(`user_id`, `role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户和角色关联表';
@@ -139,36 +150,38 @@ CREATE TABLE IF NOT EXISTS `sys_role_dept` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色和部门关联表';
 
 CREATE TABLE IF NOT EXISTS `sys_option` (
-    `id`            bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `category`      varchar(50)  NOT NULL                COMMENT '类别',
-    `name`          varchar(50)  NOT NULL                COMMENT '名称',
-    `code`          varchar(100) NOT NULL                COMMENT '键',
-    `value`         longtext     DEFAULT NULL            COMMENT '值',
-    `default_value` longtext     DEFAULT NULL            COMMENT '默认值',
-    `description`   varchar(200) DEFAULT NULL            COMMENT '描述',
-    `update_user`   bigint(20)   DEFAULT NULL            COMMENT '修改人',
-    `update_time`   datetime     DEFAULT NULL            COMMENT '修改时间',
+    `id`            bigint(20)   AUTO_INCREMENT COMMENT 'ID',
+    `category`      varchar(50)  NOT NULL       COMMENT '类别',
+    `name`          varchar(50)  NOT NULL       COMMENT '名称',
+    `code`          varchar(100) NOT NULL       COMMENT '键',
+    `value`         longtext     DEFAULT NULL   COMMENT '值',
+    `default_value` longtext     DEFAULT NULL   COMMENT '默认值',
+    `description`   varchar(200) DEFAULT NULL   COMMENT '描述',
+    `update_user`   bigint(20)   DEFAULT NULL   COMMENT '修改人',
+    `update_time`   datetime     DEFAULT NULL   COMMENT '修改时间',
     PRIMARY KEY (`id`),
     UNIQUE INDEX `uk_category_code`(`category`, `code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='参数表';
 
 CREATE TABLE IF NOT EXISTS `sys_dict` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `name`        varchar(30)  NOT NULL                COMMENT '名称',
-    `code`        varchar(30)  NOT NULL                COMMENT '编码',
-    `description` varchar(200) DEFAULT NULL            COMMENT '描述',
-    `is_system`   bit(1)       NOT NULL DEFAULT b'0'   COMMENT '是否为系统内置数据',
-    `create_user` bigint(20)   NOT NULL                COMMENT '创建人',
-    `create_time` datetime     NOT NULL                COMMENT '创建时间',
-    `update_user` bigint(20)   DEFAULT NULL            COMMENT '修改人',
-    `update_time` datetime     DEFAULT NULL            COMMENT '修改时间',
+    `id`          bigint(20)   AUTO_INCREMENT        COMMENT 'ID',
+    `name`        varchar(30)  NOT NULL              COMMENT '名称',
+    `code`        varchar(30)  NOT NULL              COMMENT '编码',
+    `description` varchar(200) DEFAULT NULL          COMMENT '描述',
+    `is_system`   bit(1)       NOT NULL DEFAULT b'0' COMMENT '是否为系统内置数据',
+    `create_user` bigint(20)   NOT NULL              COMMENT '创建人',
+    `create_time` datetime     NOT NULL              COMMENT '创建时间',
+    `update_user` bigint(20)   DEFAULT NULL          COMMENT '修改人',
+    `update_time` datetime     DEFAULT NULL          COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0    COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_name`(`name`),
-    UNIQUE INDEX `uk_code`(`code`)
+    UNIQUE INDEX `uk_name`(`name`, `deleted`),
+    UNIQUE INDEX `uk_code`(`code`, `deleted`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典表';
 
 CREATE TABLE IF NOT EXISTS `sys_dict_item` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`          bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `label`       varchar(30)  NOT NULL                    COMMENT '标签',
     `value`       varchar(30)  NOT NULL                    COMMENT '值',
     `color`       varchar(30)  DEFAULT NULL                COMMENT '标签颜色',
@@ -180,15 +193,17 @@ CREATE TABLE IF NOT EXISTS `sys_dict_item` (
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
     `update_user` bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_value_dict_id`(`value`, `dict_id`),
+    UNIQUE INDEX `uk_value_dict_id`(`value`, `dict_id`, `deleted`),
     INDEX `idx_dict_id`(`dict_id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='字典项表';
 
 CREATE TABLE IF NOT EXISTS `sys_log` (
-    `id`               bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`               bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `trace_id`         varchar(255) DEFAULT NULL                COMMENT '链路ID',
     `description`      varchar(255) NOT NULL                    COMMENT '日志描述',
     `module`           varchar(100) NOT NULL                    COMMENT '所属模块',
@@ -216,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `sys_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统日志表';
 
 CREATE TABLE IF NOT EXISTS `sys_message` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`          bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `title`       varchar(50)  NOT NULL                    COMMENT '标题',
     `content`     text         DEFAULT NULL                COMMENT '内容',
     `type`        tinyint(1)   UNSIGNED NOT NULL DEFAULT 1 COMMENT '类型（1：系统消息；2：安全消息）',
@@ -224,7 +239,10 @@ CREATE TABLE IF NOT EXISTS `sys_message` (
     `scope`       tinyint(1)   UNSIGNED NOT NULL DEFAULT 1 COMMENT '通知范围（1：所有人；2：指定用户）',
     `users`       json         DEFAULT NULL                COMMENT '通知用户',
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
-    PRIMARY KEY (`id`)
+    `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
+    PRIMARY KEY (`id`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
 
 CREATE TABLE IF NOT EXISTS `sys_message_log` (
@@ -235,7 +253,7 @@ CREATE TABLE IF NOT EXISTS `sys_message_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息日志表';
 
 CREATE TABLE IF NOT EXISTS `sys_notice` (
-    `id`             bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`             bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `title`          varchar(150) NOT NULL                    COMMENT '标题',
     `content`        mediumtext   NOT NULL                    COMMENT '内容',
     `type`           varchar(30)  NOT NULL                    COMMENT '分类',
@@ -250,9 +268,11 @@ CREATE TABLE IF NOT EXISTS `sys_notice` (
     `create_time`    datetime     NOT NULL                    COMMENT '创建时间',
     `update_user`    bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time`    datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`        bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
 
 CREATE TABLE IF NOT EXISTS `sys_notice_log` (
@@ -263,7 +283,7 @@ CREATE TABLE IF NOT EXISTS `sys_notice_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告日志表';
 
 CREATE TABLE IF NOT EXISTS `sys_storage` (
-    `id`          bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`          bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `name`        varchar(100) NOT NULL                    COMMENT '名称',
     `code`        varchar(30)  NOT NULL                    COMMENT '编码',
     `type`        tinyint(1)   UNSIGNED NOT NULL DEFAULT 1 COMMENT '类型（1：本地存储；2：对象存储）',
@@ -280,14 +300,16 @@ CREATE TABLE IF NOT EXISTS `sys_storage` (
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
     `update_user` bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_code`(`code`),
+    UNIQUE INDEX `uk_code`(`code`, `deleted`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='存储表';
 
 CREATE TABLE IF NOT EXISTS `sys_file` (
-    `id`                 bigint(20)    NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`                 bigint(20)    AUTO_INCREMENT              COMMENT 'ID',
     `name`               varchar(255)  NOT NULL                    COMMENT '名称',
     `original_name`      varchar(255)  NOT NULL                    COMMENT '原始名称',
     `size`               bigint(20)    DEFAULT NULL                COMMENT '大小（字节）',
@@ -306,15 +328,18 @@ CREATE TABLE IF NOT EXISTS `sys_file` (
     `create_time`        datetime      NOT NULL                    COMMENT '创建时间',
     `update_user`        bigint(20)    DEFAULT NULL                COMMENT '修改人',
     `update_time`        datetime      DEFAULT NULL                COMMENT '修改时间',
+    `deleted`            bigint(20)    NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
     INDEX `idx_type`(`type`),
     INDEX `idx_sha256`(`sha256`),
     INDEX `idx_storage_id`(`storage_id`),
-    INDEX `idx_create_user`(`create_user`)
+    INDEX `idx_create_user`(`create_user`),
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件表';
 
 CREATE TABLE IF NOT EXISTS `sys_client` (
-    `id`             bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`             bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `client_id`      varchar(50)  NOT NULL                    COMMENT '客户端ID',
     `client_type`    varchar(50)  NOT NULL                    COMMENT '客户端类型',
     `auth_type`      json         NOT NULL                    COMMENT '认证类型',
@@ -325,14 +350,16 @@ CREATE TABLE IF NOT EXISTS `sys_client` (
     `create_time`    datetime     NOT NULL                    COMMENT '创建时间',
     `update_user`    bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time`    datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`        bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_client_id`(`client_id`),
+    UNIQUE INDEX `uk_client_id`(`client_id`, `deleted`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客户端表';
 
 CREATE TABLE IF NOT EXISTS `sys_sms_config`  (
-    `id`              bigint(20)   NOT NULL AUTO_INCREMENT     COMMENT 'ID',
+    `id`              bigint(20)   AUTO_INCREMENT              COMMENT 'ID',
     `name`            varchar(100) NOT NULL                    COMMENT '名称',
     `supplier`        varchar(50)  NOT NULL                    COMMENT '厂商',
     `access_key`      varchar(255) NOT NULL                    COMMENT 'Access Key',
@@ -350,9 +377,11 @@ CREATE TABLE IF NOT EXISTS `sys_sms_config`  (
     `create_time`     datetime     NOT NULL                    COMMENT '创建时间',
     `update_user`     bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time`     datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`         bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短信配置表';
 
 CREATE TABLE IF NOT EXISTS `sys_sms_log`  (

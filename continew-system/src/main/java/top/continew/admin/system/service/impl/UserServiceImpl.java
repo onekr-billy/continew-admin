@@ -510,7 +510,8 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
                 q.in("t1.dept_id", deptIdList);
             })
             .in(CollUtil.isNotEmpty(userIdList), "t1.id", userIdList)
-            .notIn(CollUtil.isNotEmpty(excludeUserIdList), "t1.id", excludeUserIdList);
+            .notIn(CollUtil.isNotEmpty(excludeUserIdList), "t1.id", excludeUserIdList)
+            .eq("t1.deleted", 0L);
     }
 
     /**

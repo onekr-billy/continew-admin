@@ -281,6 +281,12 @@ mybatis-plus:
       # 主键类型（默认 assign_id，表示自行赋值）
       # auto 代表使用数据库自增策略（需要在表中设置好自增约束）
       id-type: ASSIGN_ID
+      # 逻辑删除字段名
+      logic-delete-field: deleted
+      # 逻辑未删除值
+      logic-not-delete-value: 0
+      # 逻辑已删除值（解决唯一索引冲突）
+      logic-delete-value: id
   ## 扩展配置
   extension:
     enabled: true

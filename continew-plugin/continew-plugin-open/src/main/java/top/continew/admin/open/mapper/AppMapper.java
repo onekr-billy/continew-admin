@@ -38,6 +38,6 @@ public interface AppMapper extends BaseMapper<AppDO> {
      * @param accessKey Access Key
      * @return 应用信息
      */
-    @Select("select * from sys_app where access_key = #{accessKey}")
+    @Select("select * from sys_app where deleted = 0 AND access_key = #{accessKey}")
     AppDO selectByAccessKey(@FieldEncrypt @Param("accessKey") String accessKey);
 }

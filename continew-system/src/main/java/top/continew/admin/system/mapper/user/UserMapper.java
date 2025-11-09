@@ -65,7 +65,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param username 用户名
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE username = #{username}")
+    @Select("SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0")
     UserDO selectByUsername(@Param("username") String username);
 
     /**
@@ -74,7 +74,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param phone 手机号
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE phone = #{phone}")
+    @Select("SELECT * FROM sys_user WHERE phone = #{phone} AND deleted = 0")
     UserDO selectByPhone(@FieldEncrypt @Param("phone") String phone);
 
     /**
@@ -83,7 +83,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param email 邮箱
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE email = #{email}")
+    @Select("SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0")
     UserDO selectByEmail(@FieldEncrypt @Param("email") String email);
 
     /**
@@ -92,6 +92,6 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param id ID
      * @return 昵称
      */
-    @Select("SELECT nickname FROM sys_user WHERE id = #{id}")
+    @Select("SELECT nickname FROM sys_user WHERE id = #{id} AND deleted = 0")
     String selectNicknameById(@Param("id") Long id);
 }

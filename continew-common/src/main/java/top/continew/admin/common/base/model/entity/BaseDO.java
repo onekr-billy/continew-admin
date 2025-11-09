@@ -63,4 +63,9 @@ public class BaseDO extends BaseIdDO {
      */
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateTime;
+
+    /**
+     * 是否已删除（0：否；id：是）
+     */
+    private Long deleted;
 }

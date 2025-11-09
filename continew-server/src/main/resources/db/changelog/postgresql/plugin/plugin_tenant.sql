@@ -18,27 +18,30 @@ CREATE TABLE IF NOT EXISTS "tenant" (
     "create_time"    timestamp    NOT NULL,
     "update_user"    int8         DEFAULT NULL,
     "update_time"    timestamp    DEFAULT NULL,
+    "deleted"        int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_tenant_code" ON "tenant" ("code");
-CREATE INDEX "idx_tenant_admin_user" ON "tenant" ("admin_user");
-CREATE INDEX "idx_tenant_package_id" ON "tenant" ("package_id");
+CREATE UNIQUE INDEX "uk_tenant_code"  ON "tenant" ("code", "deleted");
+CREATE INDEX "idx_tenant_admin_user"  ON "tenant" ("admin_user");
+CREATE INDEX "idx_tenant_package_id"  ON "tenant" ("package_id");
 CREATE INDEX "idx_tenant_create_user" ON "tenant" ("create_user");
 CREATE INDEX "idx_tenant_update_user" ON "tenant" ("update_user");
-COMMENT ON COLUMN "tenant"."id" IS 'ID';
-COMMENT ON COLUMN "tenant"."name" IS '名称';
-COMMENT ON COLUMN "tenant"."code" IS '编码';
-COMMENT ON COLUMN "tenant"."domain" IS '域名';
-COMMENT ON COLUMN "tenant"."expire_time" IS '过期时间';
-COMMENT ON COLUMN "tenant"."description" IS '描述';
-COMMENT ON COLUMN "tenant"."status" IS '状态（1：启用；2：禁用）';
-COMMENT ON COLUMN "tenant"."package_id" IS '套餐ID';
-COMMENT ON COLUMN "tenant"."admin_user" IS '管理员用户';
+CREATE INDEX "idx_tenant_deleted"     ON "tenant" ("deleted");
+COMMENT ON COLUMN "tenant"."id"             IS 'ID';
+COMMENT ON COLUMN "tenant"."name"           IS '名称';
+COMMENT ON COLUMN "tenant"."code"           IS '编码';
+COMMENT ON COLUMN "tenant"."domain"         IS '域名';
+COMMENT ON COLUMN "tenant"."expire_time"    IS '过期时间';
+COMMENT ON COLUMN "tenant"."description"    IS '描述';
+COMMENT ON COLUMN "tenant"."status"         IS '状态（1：启用；2：禁用）';
+COMMENT ON COLUMN "tenant"."package_id"     IS '套餐ID';
+COMMENT ON COLUMN "tenant"."admin_user"     IS '管理员用户';
 COMMENT ON COLUMN "tenant"."admin_username" IS '管理员用户名';
-COMMENT ON COLUMN "tenant"."create_user" IS '创建人';
-COMMENT ON COLUMN "tenant"."create_time" IS '创建时间';
-COMMENT ON COLUMN "tenant"."update_user" IS '修改人';
-COMMENT ON COLUMN "tenant"."update_time" IS '修改时间';
+COMMENT ON COLUMN "tenant"."create_user"    IS '创建人';
+COMMENT ON COLUMN "tenant"."create_time"    IS '创建时间';
+COMMENT ON COLUMN "tenant"."update_user"    IS '修改人';
+COMMENT ON COLUMN "tenant"."update_time"    IS '修改时间';
+COMMENT ON COLUMN "tenant"."deleted"        IS '是否已删除（0：否；id：是）';
 COMMENT ON TABLE "tenant" IS '租户表';
 
 CREATE TABLE IF NOT EXISTS "tenant_package" (
@@ -51,22 +54,25 @@ CREATE TABLE IF NOT EXISTS "tenant_package" (
     "create_user"         int8         NOT NULL, 
     "create_time"         timestamp    NOT NULL, 
     "update_user"         int8         DEFAULT NULL, 
-    "update_time"         timestamp    DEFAULT NULL, 
+    "update_time"         timestamp    DEFAULT NULL,
+    "deleted"             int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
 CREATE INDEX "idx_tenant_package_create_user" ON "tenant_package" ("create_user");
 CREATE INDEX "idx_tenant_package_update_user" ON "tenant_package" ("update_user");
-COMMENT ON COLUMN "tenant_package"."id" IS 'ID';
-COMMENT ON COLUMN "tenant_package"."name" IS '名称';
-COMMENT ON COLUMN "tenant_package"."sort" IS '排序';
+CREATE INDEX "idx_tenant_deleted"             ON "tenant_package" ("deleted");
+COMMENT ON COLUMN "tenant_package"."id"                  IS 'ID';
+COMMENT ON COLUMN "tenant_package"."name"                IS '名称';
+COMMENT ON COLUMN "tenant_package"."sort"                IS '排序';
 COMMENT ON COLUMN "tenant_package"."menu_check_strictly" IS '菜单选择是否父子节点关联';
-COMMENT ON COLUMN "tenant_package"."description" IS '描述';
-COMMENT ON COLUMN "tenant_package"."status" IS '状态（1：启用；2：禁用）';
-COMMENT ON COLUMN "tenant_package"."create_user" IS '创建人';
-COMMENT ON COLUMN "tenant_package"."create_time" IS '创建时间';
-COMMENT ON COLUMN "tenant_package"."update_user" IS '修改人';
-COMMENT ON COLUMN "tenant_package"."update_time" IS '修改时间';
-COMMENT ON TABLE "tenant_package" IS '租户套餐表';
+COMMENT ON COLUMN "tenant_package"."description"         IS '描述';
+COMMENT ON COLUMN "tenant_package"."status"              IS '状态（1：启用；2：禁用）';
+COMMENT ON COLUMN "tenant_package"."create_user"         IS '创建人';
+COMMENT ON COLUMN "tenant_package"."create_time"         IS '创建时间';
+COMMENT ON COLUMN "tenant_package"."update_user"         IS '修改人';
+COMMENT ON COLUMN "tenant_package"."update_time"         IS '修改时间';
+COMMENT ON COLUMN "tenant_package"."deleted"             IS '是否已删除（0：否；id：是）';
+COMMENT ON TABLE "tenant_package"                        IS '租户套餐表';
 
 CREATE TABLE IF NOT EXISTS "tenant_package_menu" (
     "package_id" int8 NOT NULL, 
@@ -74,8 +80,8 @@ CREATE TABLE IF NOT EXISTS "tenant_package_menu" (
     PRIMARY KEY ("package_id", "menu_id")
 );
 COMMENT ON COLUMN "tenant_package_menu"."package_id" IS '套餐ID';
-COMMENT ON COLUMN "tenant_package_menu"."menu_id" IS '菜单ID';
-COMMENT ON TABLE "tenant_package_menu" IS '租户套餐和菜单关联表';
+COMMENT ON COLUMN "tenant_package_menu"."menu_id"    IS '菜单ID';
+COMMENT ON TABLE "tenant_package_menu"               IS '租户套餐和菜单关联表';
 
 -- 为已有表增加租户字段
 ALTER TABLE "sys_dept" ADD COLUMN "tenant_id" int8 NOT NULL DEFAULT 0;
@@ -140,19 +146,22 @@ CREATE INDEX "idx_app_tenant_id" ON "sys_app" ("tenant_id");
 
 -- 调整唯一索引
 DROP INDEX IF EXISTS "uk_dept_name_parent_id";
-CREATE UNIQUE INDEX "uk_dept_name_parent_id" ON "sys_dept" ("name", "parent_id", "tenant_id");
+CREATE UNIQUE INDEX "uk_dept_name_parent_id" ON "sys_dept" ("name", "parent_id", "deleted", "tenant_id");
 
 DROP INDEX IF EXISTS "uk_role_name", "uk_role_code";
-CREATE UNIQUE INDEX "uk_role_name" ON "sys_role" ("name", "tenant_id");
-CREATE UNIQUE INDEX "uk_role_code" ON "sys_role" ("code", "tenant_id");
+CREATE UNIQUE INDEX "uk_role_name" ON "sys_role" ("name", "deleted", "tenant_id");
+CREATE UNIQUE INDEX "uk_role_code" ON "sys_role" ("code", "deleted", "tenant_id");
 
 DROP INDEX IF EXISTS "uk_user_username", "uk_user_email", "uk_user_phone";
-CREATE UNIQUE INDEX "uk_user_username" ON "sys_user" ("username", "tenant_id");
-CREATE UNIQUE INDEX "uk_user_email" ON "sys_user" ("email", "tenant_id");
-CREATE UNIQUE INDEX "uk_user_phone" ON "sys_user" ("phone", "tenant_id");
+CREATE UNIQUE INDEX "uk_user_username" ON "sys_user" ("username", "deleted", "tenant_id");
+CREATE UNIQUE INDEX "uk_user_email" ON "sys_user" ("email", "deleted", "tenant_id");
+CREATE UNIQUE INDEX "uk_user_phone" ON "sys_user" ("phone", "deleted", "tenant_id");
+
+DROP INDEX IF EXISTS "uk_user_source_open_id";
+CREATE UNIQUE INDEX "uk_user_source_open_id" ON "sys_user_social" ("source", "open_id", "deleted", "tenant_id");
 
 DROP INDEX IF EXISTS "uk_app_access_key";
-CREATE UNIQUE INDEX "uk_app_access_key" ON "sys_app" ("access_key", "tenant_id");
+CREATE UNIQUE INDEX "uk_app_access_key" ON "sys_app" ("access_key", "deleted", "tenant_id");
 
 -- 初始化默认菜单
 INSERT INTO "sys_menu" ("id", "title", "parent_id", "type", "path", "name", "component", "redirect", "icon", "is_external", "is_cache", "is_hidden", "permission", "sort", "status", "create_user", "create_time")
@@ -173,10 +182,4 @@ VALUES
 (3023, '新增', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:create', 3, 1, 1, NOW()),
 (3024, '修改', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:update', 4, 1, 1, NOW()),
 (3025, '删除', 3020, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'tenant:package:delete', 5, 1, 1, NOW());
-
--- changeset kai:20251022-01
--- comment 重置租户场景索引
-DROP INDEX IF EXISTS "uk_user_source_open_id";
-CREATE UNIQUE INDEX "uk_user_source_open_id"
-    ON "sys_user_social" ("source", "open_id", "tenant_id");
 
