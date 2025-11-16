@@ -16,6 +16,8 @@
 
 package top.continew.admin.system.model.req;
 
+import cn.sticki.spel.validator.constrain.SpelNotBlank;
+import cn.sticki.spel.validator.jakarta.SpelValid;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -38,6 +40,7 @@ import java.io.Serializable;
  * @since 2023/12/26 22:09
  */
 @Data
+@SpelValid
 @Schema(description = "存储创建或修改请求参数")
 public class StorageReq implements Serializable {
 
@@ -108,6 +111,20 @@ public class StorageReq implements Serializable {
     @Length(max = 255, message = "访问路径长度不能超过 {max} 个字符", groups = ValidationGroup.Storage.Local.class)
     @NotBlank(message = "访问路径不能为空", groups = ValidationGroup.Storage.Local.class)
     private String domain;
+
+    /**
+     * 启用回收站
+     */
+    @Schema(description = "启用回收站", example = "true")
+    @NotNull(message = "启用回收站无效")
+    private Boolean recycleBinEnabled;
+
+    /**
+     * 回收站路径
+     */
+    @Schema(description = "回收站路径", example = ".RECYCLE.BIN/")
+    @SpelNotBlank(condition = "#this.recycleBinEnabled == true", message = "回收站路径不能为空")
+    private String recycleBinPath;
 
     /**
      * 排序

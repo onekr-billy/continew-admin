@@ -19,6 +19,7 @@ package top.continew.admin.system.model.entity;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -115,6 +116,12 @@ public class FileDO extends BaseDO {
     private Long storageId;
 
     /**
+     * 是否已删除（0：否；1：回收站）
+     */
+    @TableLogic(value = "0", delval = "1")
+    private Long deleted;
+
+    /**
      * 基于 {@link FileInfo} 构建文件信息对象
      *
      * @param fileInfo {@link FileInfo} 文件信息
@@ -143,7 +150,7 @@ public class FileDO extends BaseDO {
     /**
      * 转换为 {@link FileInfo} 文件信息对象
      *
-     * @param storage 存储配置信息
+     * @param storage 存储配置
      * @return {@link FileInfo} 文件信息对象
      */
     public FileInfo toFileInfo(StorageDO storage) {

@@ -22,8 +22,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.base.model.entity.BaseDO;
+import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.enums.StorageTypeEnum;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.encrypt.field.annotation.FieldEncrypt;
@@ -85,6 +85,16 @@ public class StorageDO extends BaseDO {
      * 域名
      */
     private String domain;
+
+    /**
+     * 启用回收站
+     */
+    private Boolean recycleBinEnabled;
+
+    /**
+     * 回收站路径
+     */
+    private String recycleBinPath;
 
     /**
      * 描述

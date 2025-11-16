@@ -89,5 +89,10 @@ public enum StorageTypeEnum implements BaseEnum<Integer> {
         if (StrUtil.isNotBlank(req.getDomain())) {
             req.setDomain(StrUtil.appendIfMissing(req.getDomain(), StringConstants.SLASH));
         }
+        // 回收站路径需要以 “/” 结尾
+        if (Boolean.TRUE.equals(req.getRecycleBinEnabled())) {
+            req.setRecycleBinPath(StrUtil.appendIfMissing(StrUtil.removePrefix(req
+                .getRecycleBinPath(), StringConstants.SLASH), StringConstants.SLASH));
+        }
     }
 }

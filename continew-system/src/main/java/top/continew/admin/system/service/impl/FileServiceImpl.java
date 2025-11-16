@@ -30,8 +30,10 @@ import org.dromara.x.file.storage.core.ProgressListener;
 import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import top.continew.admin.common.base.service.BaseServiceImpl;
+import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.enums.FileTypeEnum;
 import top.continew.admin.system.mapper.FileMapper;
@@ -45,6 +47,7 @@ import top.continew.admin.system.service.FileService;
 import top.continew.admin.system.service.StorageService;
 import top.continew.starter.cache.redisson.util.RedisLockUtils;
 import top.continew.starter.core.constant.StringConstants;
+import top.continew.starter.core.util.CollUtils;
 import top.continew.starter.core.util.StrUtils;
 import top.continew.starter.core.util.validation.CheckUtils;
 import top.continew.starter.core.util.validation.ValidationUtils;
@@ -52,6 +55,7 @@ import top.continew.starter.core.util.validation.ValidationUtils;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -71,24 +75,31 @@ public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileRes
     private StorageService storageService;
 
     @Override
-    public void beforeDelete(List<Long> ids) {
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(List<Long> ids) {
         List<FileDO> fileList = baseMapper.lambdaQuery().in(FileDO::getId, ids).list();
+        if (CollUtil.isEmpty(fileList)) {
+            return;
+        }
+        // 批量获取存储配置
         Map<Long, List<FileDO>> fileListGroup = fileList.stream().collect(Collectors.groupingBy(FileDO::getStorageId));
+        List<StorageDO> storageList = storageService.listByIds(fileListGroup.keySet());
+        Map<Long, StorageDO> storageGroup = storageList.stream()
+            .collect(Collectors.toMap(StorageDO::getId, Function.identity(), (existing, replacement) -> existing));
+        // 删除记录
         for (Map.Entry<Long, List<FileDO>> entry : fileListGroup.entrySet()) {
-            StorageDO storage = storageService.getById(entry.getKey());
-            for (FileDO file : entry.getValue()) {
-                if (!FileTypeEnum.DIR.equals(file.getType())) {
-                    FileInfo fileInfo = file.toFileInfo(storage);
-                    fileStorageService.delete(fileInfo);
-                } else {
-                    // 不允许删除非空文件夹
-                    boolean exists = baseMapper.lambdaQuery()
-                        .eq(FileDO::getParentPath, file.getPath())
-                        .eq(FileDO::getStorageId, entry.getKey())
-                        .exists();
-                    CheckUtils.throwIf(exists, "文件夹 [{}] 不为空，请先删除文件夹下的内容", file.getName());
-                }
+            StorageDO storage = storageGroup.get(entry.getKey());
+            List<Long> idList = CollUtils.mapToList(entry.getValue(), FileDO::getId);
+            if (Boolean.TRUE.equals(storage.getRecycleBinEnabled())) {
+                baseMapper.deleteByIds(idList);
+            } else {
+                baseMapper.deleteWithoutRecycleBin(idList, UserContextHolder.getUserId());
             }
+        }
+        // 删除实际文件
+        for (Map.Entry<Long, List<FileDO>> entry : fileListGroup.entrySet()) {
+            StorageDO storage = storageGroup.get(entry.getKey());
+            entry.getValue().forEach(file -> this.deleteFile(file, storage));
         }
     }
 
@@ -320,6 +331,34 @@ public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileRes
                 file.setStorageId(storage.getId());
                 baseMapper.insert(file);
             }
+        }
+    }
+
+    /**
+     * 删除实际文件
+     *
+     * @param file    文件
+     * @param storage 存储配置
+     */
+    private void deleteFile(FileDO file, StorageDO storage) {
+        Long storageId = storage.getId();
+        if (FileTypeEnum.DIR.equals(file.getType())) {
+            // 不允许删除非空文件夹
+            boolean exists = baseMapper.lambdaQuery()
+                .eq(FileDO::getParentPath, file.getPath())
+                .eq(FileDO::getStorageId, storageId)
+                .exists();
+            CheckUtils.throwIf(exists, "文件夹 [{}] 不为空，请先删除文件夹下的内容", file.getName());
+            return;
+        }
+        FileInfo fileInfo = file.toFileInfo(storage);
+        if (Boolean.TRUE.equals(storage.getRecycleBinEnabled())) {
+            // 移动到回收站目录
+            fileInfo.setId(file.getId().toString());
+            fileStorageService.move(fileInfo).setPath(storage.getRecycleBinPath() + fileInfo.getPath()).move();
+        } else {
+            // 删除文件
+            fileStorageService.delete(fileInfo);
         }
     }
 }

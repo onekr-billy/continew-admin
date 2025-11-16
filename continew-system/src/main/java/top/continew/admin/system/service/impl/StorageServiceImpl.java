@@ -91,9 +91,11 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
         if (StorageTypeEnum.OSS.equals(req.getType())) {
             req.setSecretKey(this.decryptSecretKey(req.getSecretKey(), oldStorage));
         }
-        // 校验存储编码、存储类型、状态
+        // 校验存储类型、存储编码、回收站配置、状态
         CheckUtils.throwIfNotEqual(req.getType(), oldStorage.getType(), "不允许修改存储类型");
         CheckUtils.throwIfNotEqual(req.getCode(), oldStorage.getCode(), "不允许修改存储编码");
+        CheckUtils.throwIfNotEqual(req.getRecycleBinEnabled(), oldStorage.getRecycleBinEnabled(), "不允许修改回收站配置");
+        CheckUtils.throwIfNotEqual(req.getRecycleBinPath(), oldStorage.getRecycleBinPath(), "不允许修改回收站配置");
         DisEnableStatusEnum newStatus = req.getStatus();
         CheckUtils.throwIf(Boolean.TRUE.equals(oldStorage.getIsDefault()) && DisEnableStatusEnum.DISABLE
             .equals(newStatus), "[{}] 是默认存储，不允许禁用", oldStorage.getName());

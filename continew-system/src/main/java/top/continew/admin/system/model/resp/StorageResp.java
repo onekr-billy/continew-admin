@@ -86,6 +86,18 @@ public class StorageResp extends BaseDetailResp {
     private String domain;
 
     /**
+     * 启用回收站
+     */
+    @Schema(description = "启用回收站", example = "true")
+    private Boolean recycleBinEnabled;
+
+    /**
+     * 回收站路径
+     */
+    @Schema(description = "回收站路径", example = ".RECYCLE.BIN/")
+    private String recycleBinPath;
+
+    /**
      * 描述
      */
     @Schema(description = "描述", example = "存储描述")
