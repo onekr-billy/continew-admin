@@ -70,7 +70,7 @@ public class OptionServiceImpl implements OptionService {
         return baseMapper.selectByCategory(category.name())
             .stream()
             .collect(Collectors.toMap(OptionDO::getCode, o -> StrUtil.emptyIfNull(ObjectUtil.defaultIfNull(o
-                .getValue(), o.getDefaultValue())), (oldVal, newVal) -> oldVal));
+                .getValue(), o.getDefaultValue())), (existing, replacement) -> existing));
     }
 
     @Override
@@ -91,7 +91,7 @@ public class OptionServiceImpl implements OptionService {
         Map<String, String> passwordPolicyOptionMap = options.stream()
             .filter(option -> StrUtil.startWith(option.getCode(), PasswordPolicyEnum.CATEGORY
                 .name() + StringConstants.UNDERLINE))
-            .collect(Collectors.toMap(OptionReq::getCode, OptionReq::getValue, (oldVal, newVal) -> oldVal));
+            .collect(Collectors.toMap(OptionReq::getCode, OptionReq::getValue, (existing, replacement) -> existing));
         for (Map.Entry<String, String> passwordPolicyOptionEntry : passwordPolicyOptionMap.entrySet()) {
             String code = passwordPolicyOptionEntry.getKey();
             String value = passwordPolicyOptionEntry.getValue();

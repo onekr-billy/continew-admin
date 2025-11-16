@@ -158,7 +158,8 @@ public class GeneratorServiceImpl implements GeneratorService {
         Set<Map.Entry<String, List<String>>> typeMappingEntrySet = typeMappingMap.entrySet();
         // 新增或更新字段配置
         Map<String, FieldConfigDO> fieldConfigMap = fieldConfigList.stream()
-            .collect(Collectors.toMap(FieldConfigDO::getColumnName, Function.identity(), (key1, key2) -> key2));
+            .collect(Collectors.toMap(FieldConfigDO::getColumnName, Function.identity(), (existing,
+                                                                                          replacement) -> existing));
         int i = 1;
         for (Column column : columnList) {
             FieldConfigDO fieldConfig = Optional.ofNullable(fieldConfigMap.get(column.getName()))
