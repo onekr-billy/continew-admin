@@ -1,7 +1,7 @@
 # ContiNew Admin 多租户中后台管理框架
 
 <a href="https://github.com/continew-org/continew-admin" title="Release" target="_blank">
-<img src="https://img.shields.io/badge/SNAPSHOT-v4.1.0-%23ff3f59.svg" alt="Release" />
+<img src="https://img.shields.io/badge/RELEASE-v4.1.0-%23ff3f59.svg" alt="Release" />
 </a>
 <a href="https://github.com/continew-org/continew-starter" title="ContiNew Starter" target="_blank">
 <img src="https://img.shields.io/badge/ContiNew Starter-2.14.0-%236CB52D.svg" alt="ContiNew Starter" />
@@ -138,14 +138,14 @@ public class DeptController extends BaseController<DeptService, DeptResp, DeptDe
 > 功能不会用？请查看 [功能手册](https://continew.top/docs/admin/function/tenant/management.html)。
 
 - 仪表盘：提供工作台、分析页，工作台提供功能快捷导航入口、最新公告、动态；分析页提供全面数据可视化能力
-- 个人中心：支持基础信息修改、密码修改、邮箱绑定、手机号绑定（并提供行为验证码、短信限流等安全处理）、第三方账号绑定/解绑、头像裁剪上传
+- 个人中心：支持基础信息修改、密码修改、邮箱绑定、手机号绑定（并提供行为验证码、短信限流等安全处理）、第三方账号绑定/解绑（微信登录）、头像裁剪上传
 - 消息中心：提供站内信消息统一查看、标记已读、全部已读、删除等功能（目前仅支持系统通知消息）、提供个人公告查看
 - 用户管理：管理系统用户，包含新增、修改、删除、导入、导出、重置密码、分配角色等功能
 - 角色管理：管理系统用户的功能权限及数据权限，包含新增、修改、删除、分配角色等功能
 - 菜单管理：管理系统菜单及按钮权限，支持多级菜单，动态路由，包含新增、修改、删除等功能
 - 部门管理：管理系统组织架构，包含新增、修改、删除、导出等功能，以树形列表进行展示
 - 通知公告：管理系统公告，支持通知范围（所有人、指定用户）、通知方式（系统消息、登录弹窗）、定时发送、置顶设置
-- 文件管理：管理系统文件及文件夹，支持上传、下载、预览（目前支持图片、音视频、PDF、Word、Excel、PPT）、重命名、切换视图（列表、网格）等功能
+- 文件管理：管理系统文件及文件夹，支持回收站、上传/分片上传、下载、预览（目前支持图片、音视频、PDF、Word、Excel、PPT）、重命名、切换视图（列表、网格）等功能
 - 字典管理：管理系统公用数据字典，例如：消息类型。支持字典标签背景色和排序等配置
 - 系统配置：
   - 网站配置：提供修改系统标题、Logo、favicon、版权信息等基础配置功能，以方便用户系统与其自身品牌形象保持一致

@@ -1,3 +1,54 @@
+## [v4.1.0](https://github.com/continew-org/continew-admin/compare/v4.0.0...v4.1.0) (2025-11-17)
+
+### ✨ 新特性
+
+- 新增多文件分片上传功能，支持本地存储和S3存储 (GitCode#11@kiki1373639299) ([af0f58a](https://github.com/continew-org/continew-admin/commit/af0f58a096c737757b51086af3aee4309aaef572))
+- 新增微信开放平台登录配置示例 ([6e7db4f](https://github.com/continew-org/continew-admin/commit/6e7db4f418e23527cf62fadffbdc0a64199cc361))
+- 调整物理删除为逻辑删除（适配已有唯一索引） ([fbc0269](https://github.com/continew-org/continew-admin/commit/fbc0269b3c80ba4be8c82e095bd45dd7a6ae4b00))
+- 新增支持文件回收站 ([41583ea](https://github.com/continew-org/continew-admin/commit/41583ea61be8da73e9805a7175cca765fda2d0e4))
+
+### 💎 功能优化
+
+- 优化部分配置注释 ([ac82503](https://github.com/continew-org/continew-admin/commit/ac825032e23a3deca6abc89ea86cd26e6e5bc602))
+- 简化命名 isSuperAdminUser() => isSuperAdmin(), isTenantAdminUser() => isTenantAdmin() ([61a6cac](https://github.com/continew-org/continew-admin/commit/61a6cac71469442dbd923b0047ceda55940e7bb3))
+- 统一命名风格 (名词 + 动词 + 类型) ([5bc5666](https://github.com/continew-org/continew-admin/commit/5bc5666be97f5e50c190abc3126009357e40f778))
+- 简化前端模板命名，例如：UserAddDrawer => AddDrawer ([b305dd7](https://github.com/continew-org/continew-admin/commit/b305dd7e5352167a7f8a22c46329468a36ea8cc7))
+- 优化加密参数的 API 接口 example 示例说明 ([b5acdb1](https://github.com/continew-org/continew-admin/commit/b5acdb1c1c001601830dbcabe7cbd9709938f2cb))
+- 修改存储配置时，保持Secret Key为空将不更改 ([2d86b0f](https://github.com/continew-org/continew-admin/commit/2d86b0f2492399395052a787bd29d231fa6b9120))
+- UserContextHolder ThreadLocal => TransmittableThreadLocal ([3f01a5c](https://github.com/continew-org/continew-admin/commit/3f01a5c84a2ae19b20ddbd7949a1c450d7a10037))
+- 用户导入多部门分隔符变更 : -> / (GitCode#14@kiki1373639299) ([ac2e16c](https://github.com/continew-org/continew-admin/commit/ac2e16c472f19106c99e27e01a62ee067c1db3d0))
+- 移除 QueryIgnore 注解，自行处理所有 Query 参数 ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+- 适配 cs 树型结构字典配置命名调整 DICT_TREE -> TREE_DICT ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+- 适配 cs security-crypto 模块拆分及包名调整，重新引入密码编码器模块 ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+- 优化接口默认失败、成功提示 ([9b5eab6](https://github.com/continew-org/continew-admin/commit/9b5eab6a3426acc769ae54da71ed000a96d7b655))
+- 任务调度模块未启用时，增加默认提示 ([68a1227](https://github.com/continew-org/continew-admin/commit/68a1227945170e1a662ead9f6d3597163a52e41a))
+- 重构打包配置以同时支持胖包和瘦包模式 (Gitee#73@dom-w) ([6be14b5](https://github.com/continew-org/continew-admin/commit/6be14b59b1e93b2b08a63ec18558eebee73a1bf2))
+- 修正 pgsql 数据脚本错误 ([95c1776](https://github.com/continew-org/continew-admin/commit/95c1776606352528f899df60b2c1b4ec7a9079eb))
+
+### 🐛 问题修复
+
+- 系统内置用户禁止修改角色 (GitCode#8@lishuyanla) ([93d8168](https://github.com/continew-org/continew-admin/commit/93d8168e9f55ecb9691eeb9ce899503f0140020a))
+- 修复代码生成前端 API 模板错误 ([7f05453](https://github.com/continew-org/continew-admin/commit/7f05453d8c9b29427b3f19a20a452228889522f1))
+- 修复上传文件不指定 parentPath 默认上级目录不自动创建的问题 ([7ad12ef](https://github.com/continew-org/continew-admin/commit/7ad12effae8d547d63e86ad64f5a9cd89aba1221))
+- 修复缓存 CRUD API 权限前缀偶发性缺失元素的问题 ([df6e294](https://github.com/continew-org/continew-admin/commit/df6e294cbd10fb0b30354d972356b1a7440682f9))
+- 修复个人中心角色信息展示错误 ([fac8922](https://github.com/continew-org/continew-admin/commit/fac89229335bf4e7c9aa54ec38951d1abc6a45b1))
+- 对象存储配置增加 Endpoint 参数格式校验 ([f2258d8](https://github.com/continew-org/continew-admin/commit/f2258d821b37c72d792873320a618730c680c875))
+- 修复创建上级文件夹的并发问题 (GitCode#12@kiki1373639299) ([1b065b1](https://github.com/continew-org/continew-admin/commit/1b065b1755e4f40e27c6726028cc312116232d06))
+- 修复新建租户的管理员用户角色回显错误 (Gitee#72@hiteam) ([fa77fc5](https://gitee.com/continew/continew-admin/commit/fa77fc50eea4ae31722f16c583ec8f9a51ad632d)) ([5e6290f](https://gitee.com/continew/continew-admin/commit/5e6290f5c52d8dcaf517ee8be6ec5f645383e983))
+- 修复查询密码过期时间配置，未使用线程池的问题 ([8bcf27c](https://gitee.com/continew/continew-admin/commit/8bcf27c48e43a138d4b3159c0b9e563fa9011f0a))
+- 修复系统用户导入提示【存在无效部门】且新增支持多级部门导入 (GitCode#13@kiki1373639299) ([a39f644](https://github.com/continew-org/continew-admin/commit/a39f6446d7954cea78d61d9f7254096c5296631e))
+- 修复邮箱发送错误 ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+- 修复多租户下开启多数据源拦截器返回结果异常的情况 ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+- 修复查看消息详情报错的问题 ([9bfde6f](https://github.com/continew-org/continew-admin/commit/9bfde6f6a312ba08a5931cdb5e61c35cfbede5d6))
+- 修复查询用户未读消息错误 ([37539ae](https://github.com/continew-org/continew-admin/commit/37539ae8a8f240d961ed78fe80b90dc544e85087))
+- 修复第三方登录用户默认部门配置错误 (GitCode#15@kiki1373639299) ([5e7a2a4](https://github.com/continew-org/continew-admin/commit/5e7a2a4a7458ddffb065edab5e2e1ac0fb4a4f9e))
+- 修复我的公告查询到待发布公告的问题 ([8790ecf](https://github.com/continew-org/continew-admin/commit/8790ecfb1e2d71747b31cef97617025e372798f1))
+- 兼容未开启 SSL 的高版本 pgsql (Gitee#74@aiwendil) ([9aa4b2c](https://gitee.com/continew/continew-admin/commit/9aa4b2cfdda74b57082a10e0fe5a13c2f13af3c3)) ([66494fe](https://gitee.com/continew/continew-admin/commit/66494fe7d72601d4cede4be7ae6feec45501bd83))
+
+### 📦 依赖升级
+
+- continew-starter 2.13.4 => 2.14.0 ([541e53e](https://github.com/continew-org/continew-admin/commit/541e53ea26c9f0e67e1a2b7441e21356328d7a57))
+
 ## [v4.0.0](https://github.com/continew-org/continew-admin/compare/v3.7.0...v4.0.0) (2025-07-27)
 
 ### ✨ 新特性
