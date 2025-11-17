@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS "tenant_package" (
 );
 CREATE INDEX "idx_tenant_package_create_user" ON "tenant_package" ("create_user");
 CREATE INDEX "idx_tenant_package_update_user" ON "tenant_package" ("update_user");
-CREATE INDEX "idx_tenant_deleted"             ON "tenant_package" ("deleted");
+CREATE INDEX "idx_tenant_package_deleted"             ON "tenant_package" ("deleted");
 COMMENT ON COLUMN "tenant_package"."id"                  IS 'ID';
 COMMENT ON COLUMN "tenant_package"."name"                IS '名称';
 COMMENT ON COLUMN "tenant_package"."sort"                IS '排序';
