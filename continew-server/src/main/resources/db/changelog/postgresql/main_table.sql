@@ -666,3 +666,16 @@ COMMENT ON COLUMN "sys_sms_log"."res_msg"     IS '返回数据';
 COMMENT ON COLUMN "sys_sms_log"."create_user" IS '创建人';
 COMMENT ON COLUMN "sys_sms_log"."create_time" IS '创建时间';
 COMMENT ON TABLE "sys_sms_log"                IS '短信日志表';
+
+-- changeset kai:20251125-01
+-- comment 追加sys_client表字段
+ALTER TABLE "sys_client"
+ADD COLUMN "is_concurrent" bool NOT NULL DEFAULT false,
+ADD COLUMN "max_login_count" int4 NOT NULL DEFAULT -1,
+ADD COLUMN "replaced_range" varchar(20) NOT NULL DEFAULT 'ALL_DEVICE_TYPE',
+ADD COLUMN "overflow_logout_mode" varchar(20) NOT NULL DEFAULT 'KICKOUT';
+
+COMMENT ON COLUMN "sys_client"."is_concurrent" IS '是否允许同一账号多地同时登录';
+COMMENT ON COLUMN "sys_client"."max_login_count" IS '同一账号最大登录数量，-1代表不限';
+COMMENT ON COLUMN "sys_client"."replaced_range" IS '顶人下线的范围（CURR_DEVICE_TYPE=当前设备类型端；ALL_DEVICE_TYPE=所有设备类型端）';
+COMMENT ON COLUMN "sys_client"."overflow_logout_mode" IS '溢出人数的注销方式（LOGOUT=注销下线；KICKOUT=踢人下线；REPLACED=顶人下线）';

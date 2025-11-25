@@ -20,8 +20,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
-import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.base.model.entity.BaseDO;
+import top.continew.admin.common.enums.DisEnableStatusEnum;
+import top.continew.admin.system.enums.LogoutModeEnum;
+import top.continew.admin.system.enums.ReplacedRangeEnum;
 
 import java.io.Serial;
 import java.util.List;
@@ -65,6 +67,26 @@ public class ClientDO extends BaseDO {
      * Token 有效期（单位：秒，-1：永不过期）
      */
     private Long timeout;
+
+    /**
+     * 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
+     */
+    private Boolean isConcurrent;
+
+    /**
+     * 同一账号最大登录数量，-1代表不限 （只有在 isConcurrent=true, isShare=false 时此配置项才有意义）
+     */
+    private int maxLoginCount;
+
+    /**
+     * 当 isConcurrent=false 时，顶人下线的范围 (CURR_DEVICE_TYPE=当前指定的设备类型端, ALL_DEVICE_TYPE=所有设备类型端)
+     */
+    private ReplacedRangeEnum replacedRange;
+
+    /**
+     * 溢出 maxLoginCount 的客户端，将以何种方式注销下线 (LOGOUT=注销下线, KICKOUT=踢人下线, REPLACED=顶人下线)
+     */
+    private LogoutModeEnum overflowLogoutMode;
 
     /**
      * 状态

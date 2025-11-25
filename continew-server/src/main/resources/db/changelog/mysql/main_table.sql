@@ -399,3 +399,11 @@ CREATE TABLE IF NOT EXISTS `sys_sms_log`  (
     INDEX `idx_config_id`(`config_id`),
     INDEX `idx_create_user`(`create_user`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短信日志表';
+
+-- changeset KAI:20251125-01
+-- comment 追加sys_client表字段
+ALTER TABLE `sys_client`
+ADD COLUMN `is_concurrent` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否允许同一账号多地同时登录',
+ADD COLUMN `max_login_count` int NOT NULL DEFAULT -1 COMMENT '同一账号最大登录数量，-1代表不限',
+ADD COLUMN `replaced_range` varchar(20) DEFAULT 'ALL_DEVICE_TYPE' COMMENT '顶人下线的范围（CURR_DEVICE_TYPE=当前设备类型端；ALL_DEVICE_TYPE=所有设备类型端）',
+ADD COLUMN `overflow_logout_mode` varchar(20) DEFAULT 'KICKOUT' COMMENT '溢出人数的注销方式（LOGOUT=注销下线；KICKOUT=踢人下线；REPLACED=顶人下线）';
