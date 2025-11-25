@@ -112,10 +112,10 @@ public abstract class AbstractLoginHandler<T extends LoginReq> implements LoginH
             return roles;
         }, threadPoolTaskExecutor);
         CompletableFuture<Integer> passwordExpirationDaysFuture = CompletableFuture.supplyAsync(() -> optionService
-                .getValueByCode2Int(PASSWORD_EXPIRATION_DAYS.name()), threadPoolTaskExecutor);
+            .getValueByCode2Int(PASSWORD_EXPIRATION_DAYS.name()), threadPoolTaskExecutor);
         CompletableFuture.allOf(permissionFuture, roleFuture, passwordExpirationDaysFuture);
         UserContext userContext = new UserContext(permissionFuture.join(), roleFuture
-                .join(), passwordExpirationDaysFuture.join());
+            .join(), passwordExpirationDaysFuture.join());
         BeanUtil.copyProperties(user, userContext);
         // 设置登录配置参数
         SaLoginParameter loginParameter = new SaLoginParameter();
@@ -123,22 +123,26 @@ public abstract class AbstractLoginHandler<T extends LoginReq> implements LoginH
         loginParameter.setTimeout(client.getTimeout());
         loginParameter.setDeviceType(client.getClientType());
         loginParameter.setExtra(CLIENT_ID, client.getClientId());
-        // 设置并发登录相关参数
+        // 设置并发登录配置参数
         loginParameter.setIsConcurrent(client.getIsConcurrent());
+        if (Boolean.FALSE.equals(client.getIsConcurrent())) {
+            loginParameter.setReplacedRange(SaReplacedRange.valueOf(client.getReplacedRange().getValue()));
+        }
         loginParameter.setMaxLoginCount(client.getMaxLoginCount());
-        loginParameter.setOverflowLogoutMode(SaLogoutMode.valueOf(client.getOverflowLogoutMode().getValue()));
-        loginParameter.setReplacedRange(SaReplacedRange.valueOf(client.getReplacedRange().getValue()));
+        if (client.getMaxLoginCount() != -1) {
+            loginParameter.setOverflowLogoutMode(SaLogoutMode.valueOf(client.getOverflowLogoutMode().getValue()));
+        }
         userContext.setClientType(client.getClientType());
         userContext.setClientId(client.getClientId());
         userContext.setTenantId(tenantId);
         // 登录并缓存用户信息
         StpUtil.login(userContext.getId(), loginParameter.setExtraData(BeanUtil
-                .beanToMap(new UserExtraContext(ServletUtils.getRequest()))));
+            .beanToMap(new UserExtraContext(ServletUtils.getRequest()))));
         UserContextHolder.setContext(userContext);
         return LoginResp.builder()
-                .token(StpUtil.getTokenValue())
-                .tenantId(TenantContextHolder.isTenantEnabled() ? TenantContextHolder.getTenantId() : null)
-                .build();
+            .token(StpUtil.getTokenValue())
+            .tenantId(TenantContextHolder.isTenantEnabled() ? TenantContextHolder.getTenantId() : null)
+            .build();
     }
 
     /**

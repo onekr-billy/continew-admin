@@ -16,6 +16,8 @@
 
 package top.continew.admin.system.model.req;
 
+import cn.sticki.spel.validator.constrain.SpelNotNull;
+import cn.sticki.spel.validator.jakarta.SpelValid;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -38,6 +40,7 @@ import java.util.List;
  * @since 2024/12/03 16:04
  */
 @Data
+@SpelValid
 @Schema(description = "客户端创建或修改请求参数")
 public class ClientReq implements Serializable {
 
@@ -74,31 +77,31 @@ public class ClientReq implements Serializable {
     private Long timeout;
 
     /**
-     * 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
+     * 是否允许同一账号多地同时登录（true：允许；false：新登录挤掉旧登录）
      */
     @Schema(description = "是否允许同一账号多地同时登录", example = "true")
-    @NotNull(message = "是否运行同一账号多地同时登录不能为空")
+    @NotNull(message = "是否允许同一账号多地同时登录不能为空")
     private Boolean isConcurrent;
 
     /**
-     * 同一账号最大登录数量，-1代表不限 （只有在 isConcurrent=true, isShare=false 时此配置项才有意义）
-     */
-    @Schema(description = "同一账号最大登录数量, -1代表不限", example = "-1")
-    @NotNull(message = "同一账号最大登录数量不能为空")
-    private int maxLoginCount;
-
-    /**
-     * 当 isConcurrent=false 时，顶人下线的范围 (CURR_DEVICE_TYPE=当前指定的设备类型端, ALL_DEVICE_TYPE=所有设备类型端)
+     * 顶人下线的范围
      */
     @Schema(description = "顶人下线的范围", example = "ALL_DEVICE_TYPE")
-    @NotNull(message = "顶人下线的范围不能为空")
+    @SpelNotNull(condition = "#this.isConcurrent == false", message = "顶人下线的范围无效")
     private ReplacedRangeEnum replacedRange;
 
     /**
-     * 溢出 maxLoginCount 的客户端，将以何种方式注销下线 (LOGOUT=注销下线, KICKOUT=踢人下线, REPLACED=顶人下线)
+     * 同一账号最大登录数量（-1：不限制，只有在 isConcurrent=true，isShare=false 时才有效）
      */
-    @Schema(description = "溢出人数的注销方式", example = "KICKOUT")
-    @NotNull(message = "溢出人数的注销方式不能为空")
+    @Schema(description = "同一账号最大登录数量", example = "-1")
+    @NotNull(message = "同一账号最大登录数量不能为空")
+    private Integer maxLoginCount;
+
+    /**
+     * 溢出人数的下线方式
+     */
+    @Schema(description = "溢出人数的下线方式", example = "KICKOUT")
+    @SpelNotNull(condition = "#this.maxLoginCount != -1", message = "溢出人数的下线方式无效")
     private LogoutModeEnum overflowLogoutMode;
 
     /**
