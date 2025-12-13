@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import top.continew.admin.system.mapper.RoleMenuMapper;
 import top.continew.admin.system.model.entity.RoleMenuDO;
 import top.continew.admin.system.service.RoleMenuService;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.data.service.impl.ServiceImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +38,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class RoleMenuServiceImpl implements RoleMenuService {
-
-    private final RoleMenuMapper baseMapper;
+public class RoleMenuServiceImpl extends ServiceImpl<RoleMenuMapper, RoleMenuDO> implements RoleMenuService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -57,7 +57,7 @@ public class RoleMenuServiceImpl implements RoleMenuService {
         // 删除原有关联
         baseMapper.lambdaUpdate().eq(RoleMenuDO::getRoleId, roleId).remove();
         // 保存最新关联
-        List<RoleMenuDO> roleMenuList = menuIds.stream().map(menuId -> new RoleMenuDO(roleId, menuId)).toList();
+        List<RoleMenuDO> roleMenuList = CollUtils.mapToList(menuIds, menuId -> new RoleMenuDO(roleId, menuId));
         return baseMapper.insertBatch(roleMenuList);
     }
 

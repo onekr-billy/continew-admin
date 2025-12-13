@@ -23,11 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 import top.continew.admin.system.mapper.RoleDeptMapper;
 import top.continew.admin.system.model.entity.RoleDeptDO;
 import top.continew.admin.system.service.RoleDeptService;
+import top.continew.starter.core.util.CollUtils;
 
 import java.util.List;
 
 /**
- * 角色和部门业务实现
+ * 角色和部门关联业务实现
  *
  * @author Charles7c
  * @since 2023/2/19 10:47
@@ -55,7 +56,7 @@ public class RoleDeptServiceImpl implements RoleDeptService {
         // 删除原有关联
         baseMapper.lambdaUpdate().eq(RoleDeptDO::getRoleId, roleId).remove();
         // 保存最新关联
-        List<RoleDeptDO> roleDeptList = deptIds.stream().map(deptId -> new RoleDeptDO(roleId, deptId)).toList();
+        List<RoleDeptDO> roleDeptList = CollUtils.mapToList(deptIds, deptId -> new RoleDeptDO(roleId, deptId));
         return baseMapper.insertBatch(roleDeptList);
     }
 

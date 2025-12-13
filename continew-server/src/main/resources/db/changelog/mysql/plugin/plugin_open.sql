@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset chengzi:1
--- comment 初始化能力开放插件
+-- comment 初始化能力开放插件数据表
 -- 初始化表结构
 CREATE TABLE IF NOT EXISTS `sys_app`  (
     `id`          bigint(20)   NOT NULL     AUTO_INCREMENT COMMENT 'ID',
@@ -15,10 +15,12 @@ CREATE TABLE IF NOT EXISTS `sys_app`  (
     `create_time` datetime     NOT NULL                    COMMENT '创建时间',
     `update_user` bigint(20)   DEFAULT NULL                COMMENT '修改人',
     `update_time` datetime     DEFAULT NULL                COMMENT '修改时间',
+    `deleted`     bigint(20)   NOT NULL DEFAULT 0          COMMENT '是否已删除（0：否；id：是）',
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `uk_access_key`(`access_key`),
+    UNIQUE INDEX `uk_access_key`(`access_key`, `deleted`),
     INDEX `idx_create_user`(`create_user`),
-    INDEX `idx_update_user`(`update_user`)
+    INDEX `idx_update_user`(`update_user`),
+    INDEX `idx_deleted`(`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='应用表';
 
 -- 初始化默认菜单

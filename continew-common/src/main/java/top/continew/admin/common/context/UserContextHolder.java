@@ -20,7 +20,8 @@ import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.extra.spring.SpringUtil;
-import top.continew.admin.common.service.CommonUserService;
+import com.alibaba.ttl.TransmittableThreadLocal;
+import top.continew.admin.common.api.system.UserApi;
 import top.continew.starter.core.util.ExceptionUtils;
 
 /**
@@ -31,8 +32,8 @@ import top.continew.starter.core.util.ExceptionUtils;
  */
 public class UserContextHolder {
 
-    private static final ThreadLocal<UserContext> CONTEXT_HOLDER = new ThreadLocal<>();
-    private static final ThreadLocal<UserExtraContext> EXTRA_CONTEXT_HOLDER = new ThreadLocal<>();
+    private static final TransmittableThreadLocal<UserContext> CONTEXT_HOLDER = new TransmittableThreadLocal<>();
+    private static final TransmittableThreadLocal<UserExtraContext> EXTRA_CONTEXT_HOLDER = new TransmittableThreadLocal<>();
 
     private UserContextHolder() {
     }
@@ -144,6 +145,15 @@ public class UserContextHolder {
     }
 
     /**
+     * 获取租户 ID
+     *
+     * @return 租户 ID
+     */
+    public static Long getTenantId() {
+        return ExceptionUtils.exToNull(() -> getContext().getTenantId());
+    }
+
+    /**
      * 获取用户名
      *
      * @return 用户名
@@ -168,16 +178,26 @@ public class UserContextHolder {
      * @return 用户昵称
      */
     public static String getNickname(Long userId) {
-        return ExceptionUtils.exToNull(() -> SpringUtil.getBean(CommonUserService.class).getNicknameById(userId));
+        return ExceptionUtils.exToNull(() -> SpringUtil.getBean(UserApi.class).getNicknameById(userId));
     }
 
     /**
-     * 是否为管理员
+     * 是否为超级管理员
      *
-     * @return 是否为管理员
+     * @return true：是；false：否
      */
-    public static boolean isAdmin() {
+    public static boolean isSuperAdmin() {
         StpUtil.checkLogin();
-        return getContext().isAdmin();
+        return getContext().isSuperAdmin();
+    }
+
+    /**
+     * 是否为租户管理员
+     *
+     * @return true：是；false：否
+     */
+    public static boolean isTenantAdmin() {
+        StpUtil.checkLogin();
+        return getContext().isTenantAdmin();
     }
 }

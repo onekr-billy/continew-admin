@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import top.continew.admin.system.mapper.NoticeLogMapper;
 import top.continew.admin.system.model.entity.NoticeLogDO;
 import top.continew.admin.system.service.NoticeLogService;
+import top.continew.starter.core.util.CollUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -57,7 +58,7 @@ public class NoticeLogServiceImpl implements NoticeLogService {
         }
         // 新增没有关联的
         LocalDateTime now = LocalDateTime.now();
-        List<NoticeLogDO> list = subtract.stream().map(userId -> new NoticeLogDO(noticeId, userId, now)).toList();
+        List<NoticeLogDO> list = CollUtils.mapToList(subtract, userId -> new NoticeLogDO(noticeId, userId, now));
         return baseMapper.insertBatch(list);
     }
 

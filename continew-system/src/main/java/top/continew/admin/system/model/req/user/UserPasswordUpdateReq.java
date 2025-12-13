@@ -37,15 +37,15 @@ public class UserPasswordUpdateReq implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 当前密码（加密）
+     * 当前密码
      */
-    @Schema(description = "当前密码（加密）", example = "E7c72TH+LDxKTwavjM99W1MdI9Lljh79aPKiv3XB9MXcplhm7qJ1BJCj28yaflbdVbfc366klMtjLIWQGqb0qw==")
+    @Schema(description = "当前密码", example = "RSA 公钥加密的当前密码")
     private String oldPassword;
 
     /**
-     * 新密码（加密）
+     * 新密码
      */
-    @Schema(description = "新密码（加密）", example = "Gzc78825P5baH190lRuZFb9KJxRt/psN2jiyOMPoc5WRcCvneCwqDm3Q33BZY56EzyyVy7vQu7jQwYTK4j1+5w==")
+    @Schema(description = "新密码", example = "RSA 公钥加密的新密码")
     @NotBlank(message = "新密码不能为空")
     private String newPassword;
 }

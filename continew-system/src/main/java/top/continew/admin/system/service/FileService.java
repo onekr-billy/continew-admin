@@ -16,16 +16,18 @@
 
 package top.continew.admin.system.service;
 
+import cn.hutool.core.util.StrUtil;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.springframework.web.multipart.MultipartFile;
+import top.continew.admin.common.base.service.BaseService;
 import top.continew.admin.system.model.entity.FileDO;
+import top.continew.admin.system.model.entity.StorageDO;
 import top.continew.admin.system.model.query.FileQuery;
 import top.continew.admin.system.model.req.FileReq;
 import top.continew.admin.system.model.resp.file.FileResp;
 import top.continew.admin.system.model.resp.file.FileStatisticsResp;
 import top.continew.starter.core.constant.StringConstants;
-import top.continew.starter.data.mp.service.IService;
-import top.continew.starter.extension.crud.service.BaseService;
+import top.continew.starter.data.service.IService;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +62,7 @@ public interface FileService extends BaseService<FileResp, FileResp, FileQuery, 
      * @throws IOException /
      */
     default FileInfo upload(MultipartFile file, String parentPath) throws IOException {
-        return upload(file, parentPath, null);
+        return upload(file, StrUtil.blankToDefault(parentPath, getDefaultParentPath()), null);
     }
 
     /**
@@ -94,7 +96,7 @@ public interface FileService extends BaseService<FileResp, FileResp, FileQuery, 
      * @throws IOException /
      */
     default FileInfo upload(File file, String parentPath) throws IOException {
-        return upload(file, parentPath, null);
+        return upload(file, StrUtil.blankToDefault(parentPath, getDefaultParentPath()), null);
     }
 
     /**
@@ -146,6 +148,18 @@ public interface FileService extends BaseService<FileResp, FileResp, FileQuery, 
      * @return 文件数量
      */
     Long countByStorageIds(List<Long> storageIds);
+
+    /**
+     * 创建上级文件夹（支持多级）
+     *
+     * <p>
+     * user/avatar/ => user（path：/user）、avatar（path：/user/avatar）
+     * </p>
+     *
+     * @param parentPath 上级目录
+     * @param storage    存储配置
+     */
+    void createParentDir(String parentPath, StorageDO storage);
 
     /**
      * 获取默认上级目录

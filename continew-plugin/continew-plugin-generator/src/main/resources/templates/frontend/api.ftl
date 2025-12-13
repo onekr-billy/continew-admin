@@ -1,4 +1,5 @@
 import http from '@/utils/http'
+import type { LabelValueState } from '@/types/global'
 
 const BASE_URL = '/${apiModuleName}/${apiName}'
 
@@ -63,4 +64,9 @@ export function delete${classNamePrefix}(id: string) {
 /** @desc 导出${businessName} */
 export function export${classNamePrefix}(query: ${classNamePrefix}Query) {
   return http.download(`${'$'}{BASE_URL}/export`, query)
+}
+
+/** @desc 查询${businessName}字典 */
+export function list${classNamePrefix}Dict(query?: ${classNamePrefix}Query) {
+return http.get<LabelValueState[]>(`${'$'}{BASE_URL}/dict`, query)
 }

@@ -33,6 +33,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.*;
 import top.continew.starter.apidoc.autoconfigure.SpringDocExtensionProperties;
 import top.continew.starter.auth.satoken.autoconfigure.SaTokenExtensionProperties;
+import top.continew.starter.core.util.CollUtils;
 import top.continew.starter.extension.crud.annotation.CrudRequestMapping;
 
 import java.lang.reflect.Method;
@@ -103,7 +104,7 @@ public class GlobalAuthenticationCustomizer implements GlobalOpenApiCustomizer {
             return;
         }
         Map<String, SecurityScheme> securitySchemes = components.getSecuritySchemes();
-        List<String> schemeNames = securitySchemes.values().stream().map(SecurityScheme::getName).toList();
+        List<String> schemeNames = CollUtils.mapToList(securitySchemes.values(), SecurityScheme::getName);
         pathItem.readOperations().forEach(operation -> {
             SecurityRequirement securityRequirement = new SecurityRequirement();
             schemeNames.forEach(securityRequirement::addList);

@@ -32,14 +32,15 @@ import top.continew.admin.system.mapper.OptionMapper;
 import top.continew.admin.system.model.entity.OptionDO;
 import top.continew.admin.system.model.query.OptionQuery;
 import top.continew.admin.system.model.req.OptionReq;
-import top.continew.admin.system.model.req.OptionResetValueReq;
+import top.continew.admin.system.model.req.OptionValueResetReq;
 import top.continew.admin.system.model.resp.OptionResp;
 import top.continew.admin.system.service.OptionService;
 import top.continew.starter.cache.redisson.util.RedisUtils;
 import top.continew.starter.core.constant.StringConstants;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.core.validation.ValidationUtils;
-import top.continew.starter.data.mp.util.QueryWrapperHelper;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
+import top.continew.starter.data.util.QueryWrapperHelper;
 
 import java.util.List;
 import java.util.Map;
@@ -69,13 +70,13 @@ public class OptionServiceImpl implements OptionService {
         return baseMapper.selectByCategory(category.name())
             .stream()
             .collect(Collectors.toMap(OptionDO::getCode, o -> StrUtil.emptyIfNull(ObjectUtil.defaultIfNull(o
-                .getValue(), o.getDefaultValue())), (oldVal, newVal) -> oldVal));
+                .getValue(), o.getDefaultValue())), (existing, replacement) -> existing));
     }
 
     @Override
     public void update(List<OptionReq> options) {
         // 非空校验
-        List<Long> idList = options.stream().map(OptionReq::getId).toList();
+        List<Long> idList = CollUtils.mapToList(options, OptionReq::getId);
         List<OptionDO> optionList = baseMapper.selectByIds(idList);
         Map<String, OptionDO> optionMap = optionList.stream()
             .collect(Collectors.toMap(OptionDO::getCode, Function.identity(), (existing, replacement) -> existing));
@@ -90,7 +91,7 @@ public class OptionServiceImpl implements OptionService {
         Map<String, String> passwordPolicyOptionMap = options.stream()
             .filter(option -> StrUtil.startWith(option.getCode(), PasswordPolicyEnum.CATEGORY
                 .name() + StringConstants.UNDERLINE))
-            .collect(Collectors.toMap(OptionReq::getCode, OptionReq::getValue, (oldVal, newVal) -> oldVal));
+            .collect(Collectors.toMap(OptionReq::getCode, OptionReq::getValue, (existing, replacement) -> existing));
         for (Map.Entry<String, String> passwordPolicyOptionEntry : passwordPolicyOptionMap.entrySet()) {
             String code = passwordPolicyOptionEntry.getKey();
             String value = passwordPolicyOptionEntry.getValue();
@@ -103,7 +104,7 @@ public class OptionServiceImpl implements OptionService {
     }
 
     @Override
-    public void resetValue(OptionResetValueReq req) {
+    public void resetValue(OptionValueResetReq req) {
         RedisUtils.deleteByPattern(CacheConstants.OPTION_KEY_PREFIX + StringConstants.ASTERISK);
         String category = req.getCategory();
         List<String> codeList = req.getCode();

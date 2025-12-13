@@ -17,14 +17,21 @@
 package top.continew.admin.system.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.util.StrUtil;
 import com.alicp.jetcache.anno.Cached;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.continew.admin.common.base.service.BaseServiceImpl;
+import top.continew.admin.common.config.TenantExtensionProperties;
 import top.continew.admin.common.constant.CacheConstants;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
+import top.continew.admin.common.enums.RoleCodeEnum;
+import top.continew.admin.system.constant.SystemConstants;
 import top.continew.admin.system.enums.MenuTypeEnum;
 import top.continew.admin.system.mapper.MenuMapper;
 import top.continew.admin.system.model.entity.MenuDO;
@@ -32,11 +39,15 @@ import top.continew.admin.system.model.query.MenuQuery;
 import top.continew.admin.system.model.req.MenuReq;
 import top.continew.admin.system.model.resp.MenuResp;
 import top.continew.admin.system.service.MenuService;
+import top.continew.admin.system.service.RoleService;
 import top.continew.starter.cache.redisson.util.RedisUtils;
 import top.continew.starter.core.constant.StringConstants;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.extension.crud.model.query.SortQuery;
+import top.continew.starter.extension.tenant.context.TenantContextHolder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -50,14 +61,26 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class MenuServiceImpl extends BaseServiceImpl<MenuMapper, MenuDO, MenuResp, MenuResp, MenuQuery, MenuReq> implements MenuService {
 
+    private final TenantExtensionProperties tenantExtensionProperties;
+    @Lazy
+    @Resource
+    private RoleService roleService;
+
+    @Override
+    public List<Tree<Long>> tree(MenuQuery query, SortQuery sortQuery, boolean isSimple) {
+        if (TenantContextHolder.isTenantEnabled() && !tenantExtensionProperties.isDefaultTenant()) {
+            query = query == null ? new MenuQuery() : query;
+            query.setExcludeMenuIdList(this.listExcludeTenantMenu());
+        }
+        return this.tree(query, sortQuery, isSimple, true);
+    }
+
     @Override
     public Long create(MenuReq req) {
-        String title = req.getTitle();
-        CheckUtils.throwIf(this.isTitleExists(title, req.getParentId(), null), "新增失败，标题 [{}] 已存在", title);
+        this.checkTitleRepeat(req.getTitle(), req.getParentId(), null);
         // 目录和菜单的组件名称不能重复
         if (!MenuTypeEnum.BUTTON.equals(req.getType())) {
-            String name = req.getName();
-            CheckUtils.throwIf(this.isNameExists(name, null), "新增失败，组件名称 [{}] 已存在", name);
+            this.checkNameRepeat(req.getName(), null);
         }
         // 目录类型菜单，默认为 Layout
         if (MenuTypeEnum.DIR.equals(req.getType())) {
@@ -69,12 +92,10 @@ public class MenuServiceImpl extends BaseServiceImpl<MenuMapper, MenuDO, MenuRes
 
     @Override
     public void update(MenuReq req, Long id) {
-        String title = req.getTitle();
-        CheckUtils.throwIf(this.isTitleExists(title, req.getParentId(), id), "修改失败，标题 [{}] 已存在", title);
+        this.checkTitleRepeat(req.getTitle(), req.getParentId(), id);
         // 目录和菜单的组件名称不能重复
         if (!MenuTypeEnum.BUTTON.equals(req.getType())) {
-            String name = req.getName();
-            CheckUtils.throwIf(this.isNameExists(name, id), "修改失败，组件名称 [{}] 已存在", name);
+            this.checkNameRepeat(req.getName(), id);
         }
         MenuDO oldMenu = super.getById(id);
         CheckUtils.throwIfNotEqual(req.getType(), oldMenu.getType(), "不允许修改菜单类型");
@@ -85,8 +106,9 @@ public class MenuServiceImpl extends BaseServiceImpl<MenuMapper, MenuDO, MenuRes
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(List<Long> ids) {
-        baseMapper.lambdaUpdate().in(MenuDO::getParentId, ids).remove();
-        super.delete(ids);
+        // 级联删除菜单（包含子菜单）
+        List<Long> allDeleteIdList = this.listCascadingDeleteMenuIds(ids);
+        baseMapper.deleteByIds(allDeleteIdList);
         RedisUtils.deleteByPattern(CacheConstants.ROLE_MENU_KEY_PREFIX + StringConstants.ASTERISK);
     }
 
@@ -98,7 +120,7 @@ public class MenuServiceImpl extends BaseServiceImpl<MenuMapper, MenuDO, MenuRes
     @Override
     @Cached(key = "#roleId", name = CacheConstants.ROLE_MENU_KEY_PREFIX)
     public List<MenuResp> listByRoleId(Long roleId) {
-        if (SysConstants.SUPER_ROLE_ID.equals(roleId)) {
+        if (SystemConstants.SUPER_ADMIN_ROLE_ID.equals(roleId)) {
             return super.list(new MenuQuery(DisEnableStatusEnum.ENABLE), null);
         }
         List<MenuDO> menuList = baseMapper.selectListByRoleId(roleId);
@@ -107,34 +129,62 @@ public class MenuServiceImpl extends BaseServiceImpl<MenuMapper, MenuDO, MenuRes
         return list;
     }
 
+    @Override
+    public List<Long> listExcludeTenantMenu() {
+        Long roleId = roleService.getIdByCode(RoleCodeEnum.TENANT_ADMIN.getCode());
+        List<Long> allMenuIdList = CollUtils.mapToList(super.list(), MenuDO::getId);
+        List<Long> menuIdList = CollUtils.mapToList(baseMapper.selectListByRoleId(roleId), MenuDO::getId);
+        return CollUtil.disjunction(allMenuIdList, menuIdList).stream().toList();
+    }
+
     /**
-     * 标题是否存在
+     * 检查标题是否重复
      *
      * @param title    标题
      * @param parentId 上级 ID
      * @param id       ID
-     * @return true：存在；false：不存在
      */
-    private boolean isTitleExists(String title, Long parentId, Long id) {
-        return baseMapper.lambdaQuery()
+    private void checkTitleRepeat(String title, Long parentId, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
             .eq(MenuDO::getTitle, title)
             .eq(MenuDO::getParentId, parentId)
             .ne(id != null, MenuDO::getId, id)
-            .exists();
+            .exists(), "标题为 [{}] 的菜单已存在", title);
     }
 
     /**
-     * 名称是否存在
+     * 检查组件名称是否重复
      *
-     * @param name 标题
+     * @param name 组件名称
      * @param id   ID
-     * @return true：存在；false：不存在
      */
-    private boolean isNameExists(String name, Long id) {
-        return baseMapper.lambdaQuery()
+    private void checkNameRepeat(String name, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
             .eq(MenuDO::getName, name)
             .ne(MenuDO::getType, MenuTypeEnum.BUTTON)
             .ne(id != null, MenuDO::getId, id)
-            .exists();
+            .exists(), "组件名称为 [{}] 的菜单已存在", name);
+    }
+
+    /**
+     * 级联获取所有待删除菜单 ID 列表（包含自身及所有子菜单）
+     *
+     * @param ids ID 列表
+     * @return 待删除菜单 ID 列表（包含自身及所有子菜单）
+     */
+    private List<Long> listCascadingDeleteMenuIds(List<Long> ids) {
+        List<Long> menuIds = new ArrayList<>(ids);
+        List<Long> childIdList = baseMapper.lambdaQuery()
+            .select(MenuDO::getId)
+            .in(MenuDO::getParentId, menuIds)
+            .list()
+            .stream()
+            .map(MenuDO::getId)
+            .toList();
+        if (childIdList.isEmpty()) {
+            return menuIds;
+        }
+        menuIds.addAll(this.listCascadingDeleteMenuIds(childIdList));
+        return menuIds;
     }
 }

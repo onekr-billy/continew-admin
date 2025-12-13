@@ -27,6 +27,7 @@ import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.model.query.SmsConfigQuery;
 import top.continew.admin.system.model.resp.SmsConfigResp;
 import top.continew.admin.system.service.SmsConfigService;
+import top.continew.starter.core.util.CollUtils;
 
 import java.util.List;
 
@@ -61,6 +62,6 @@ public class SmsReadConfigDatabaseImpl implements SmsReadConfig {
         if (CollUtil.isEmpty(list)) {
             return List.of();
         }
-        return list.stream().map(SmsConfigUtil::from).toList();
+        return CollUtils.mapToList(list, SmsConfigUtil::from);
     }
 }

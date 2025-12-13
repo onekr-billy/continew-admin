@@ -20,7 +20,7 @@ import cn.hutool.core.map.MapUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import top.continew.admin.common.constant.SysConstants;
+import top.continew.admin.common.constant.GlobalConstants;
 import top.continew.admin.system.enums.OptionCategoryEnum;
 import top.continew.admin.system.service.OptionService;
 import top.continew.starter.messaging.mail.core.MailConfig;
@@ -52,7 +52,7 @@ public class MailConfigurerImpl implements MailConfigurer {
         mailConfig.setPort(MapUtil.getInt(map, "MAIL_PORT"));
         mailConfig.setUsername(MapUtil.getStr(map, "MAIL_USERNAME"));
         mailConfig.setPassword(MapUtil.getStr(map, "MAIL_PASSWORD"));
-        mailConfig.setSslEnabled(SysConstants.YES.equals(MapUtil.getInt(map, "MAIL_SSL_ENABLED")));
+        mailConfig.setSslEnabled(GlobalConstants.Boolean.YES.equals(MapUtil.getInt(map, "MAIL_SSL_ENABLED")));
         if (mailConfig.isSslEnabled()) {
             mailConfig.setSslPort(MapUtil.getInt(map, "MAIL_SSL_PORT"));
         }

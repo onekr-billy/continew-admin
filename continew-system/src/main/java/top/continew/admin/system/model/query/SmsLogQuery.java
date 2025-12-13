@@ -19,7 +19,8 @@ package top.continew.admin.system.model.query;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import top.continew.admin.common.enums.SuccessFailureStatusEnum;
-import top.continew.starter.data.core.annotation.Query;
+import top.continew.starter.data.annotation.Query;
+import top.continew.starter.data.enums.QueryType;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -42,20 +43,20 @@ public class SmsLogQuery implements Serializable {
      * 配置 ID
      */
     @Schema(description = "配置 ID", example = "1")
-    @Query
+    @Query(type = QueryType.EQ)
     private Long configId;
 
     /**
      * 手机号
      */
     @Schema(description = "手机号", example = "18888888888")
-    @Query
+    @Query(type = QueryType.EQ)
     private String phone;
 
     /**
      * 发送状态
      */
     @Schema(description = "发送状态", example = "1")
-    @Query
+    @Query(type = QueryType.EQ)
     private SuccessFailureStatusEnum status;
 }

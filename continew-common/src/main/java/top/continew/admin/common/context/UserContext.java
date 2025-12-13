@@ -17,15 +17,18 @@
 package top.continew.admin.common.context;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.continew.admin.common.constant.SysConstants;
+import top.continew.admin.common.config.TenantExtensionProperties;
+import top.continew.admin.common.constant.GlobalConstants;
+import top.continew.admin.common.enums.RoleCodeEnum;
+import top.continew.starter.core.util.CollUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 用户上下文
@@ -90,27 +93,25 @@ public class UserContext implements Serializable {
      */
     private String clientId;
 
+    /**
+     * 租户 ID
+     */
+    private Long tenantId;
+
     public UserContext(Set<String> permissions, Set<RoleContext> roles, Integer passwordExpirationDays) {
         this.permissions = permissions;
         this.setRoles(roles);
         this.passwordExpirationDays = passwordExpirationDays;
     }
 
+    /**
+     * 设置角色
+     *
+     * @param roles 角色
+     */
     public void setRoles(Set<RoleContext> roles) {
         this.roles = roles;
-        this.roleCodes = roles.stream().map(RoleContext::getCode).collect(Collectors.toSet());
-    }
-
-    /**
-     * 是否为管理员
-     *
-     * @return true：是；false：否
-     */
-    public boolean isAdmin() {
-        if (CollUtil.isEmpty(roleCodes)) {
-            return false;
-        }
-        return roleCodes.contains(SysConstants.SUPER_ROLE_CODE);
+        this.roleCodes = CollUtils.mapToSet(roles, RoleContext::getCode);
     }
 
     /**
@@ -120,7 +121,7 @@ public class UserContext implements Serializable {
      */
     public boolean isPasswordExpired() {
         // 永久有效
-        if (this.passwordExpirationDays == null || this.passwordExpirationDays <= SysConstants.NO) {
+        if (this.passwordExpirationDays == null || this.passwordExpirationDays <= GlobalConstants.Boolean.NO) {
             return false;
         }
         // 初始密码（第三方登录用户）暂不提示修改
@@ -128,5 +129,30 @@ public class UserContext implements Serializable {
             return false;
         }
         return this.pwdResetTime.plusDays(this.passwordExpirationDays).isBefore(LocalDateTime.now());
+    }
+
+    /**
+     * 是否为超级管理员
+     *
+     * @return true：是；false：否
+     */
+    public boolean isSuperAdmin() {
+        if (CollUtil.isEmpty(roleCodes)) {
+            return false;
+        }
+        return roleCodes.contains(RoleCodeEnum.SUPER_ADMIN.getCode());
+    }
+
+    /**
+     * 是否为租户管理员
+     *
+     * @return true：是；false：否
+     */
+    public boolean isTenantAdmin() {
+        if (CollUtil.isEmpty(roleCodes)) {
+            return false;
+        }
+        TenantExtensionProperties tenantExtensionProperties = SpringUtil.getBean(TenantExtensionProperties.class);
+        return !tenantExtensionProperties.isDefaultTenant() && roleCodes.contains(RoleCodeEnum.TENANT_ADMIN.getCode());
     }
 }

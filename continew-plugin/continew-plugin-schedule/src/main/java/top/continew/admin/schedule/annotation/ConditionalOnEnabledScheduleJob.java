@@ -22,7 +22,7 @@ import top.continew.starter.core.constant.PropertiesConstants;
 import java.lang.annotation.*;
 
 /**
- * 是否启用 Snail Job 注解
+ * 是否启用 Snail Job 判断注解
  *
  * @author Charles7c
  * @since 2025/5/18 12:03

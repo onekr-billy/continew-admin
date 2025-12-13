@@ -3,8 +3,6 @@
 # 若对镜像大小有严格要求，可将当前镜像替换为 alpine 版本
 FROM bellsoft/liberica-openjdk-debian:17.0.14
 
-MAINTAINER Charles7c charles7c@126.com
-
 ARG JAR_FILE=*.jar
 COPY ${JAR_FILE} /app/bin/app.jar
 WORKDIR /app/bin

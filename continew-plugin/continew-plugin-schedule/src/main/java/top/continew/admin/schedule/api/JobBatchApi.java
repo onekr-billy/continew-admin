@@ -23,12 +23,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import top.continew.admin.schedule.config.FeignRequestInterceptor;
-import top.continew.admin.schedule.model.JobInstanceLogPageResult;
 import top.continew.admin.schedule.model.JobPageResult;
-import top.continew.admin.schedule.model.query.JobInstanceLogQuery;
-import top.continew.admin.schedule.model.query.JobInstanceQuery;
 import top.continew.admin.schedule.model.query.JobLogQuery;
-import top.continew.admin.schedule.model.resp.JobInstanceResp;
 import top.continew.admin.schedule.model.resp.JobLogResp;
 
 import java.util.List;
@@ -69,22 +65,4 @@ public interface JobBatchApi {
      */
     @PostMapping("/batch/retry/{id}")
     Result<Boolean> retry(@PathVariable("id") Long id);
-
-    /**
-     * 分页查询任务实例列表
-     *
-     * @param query 查询条件
-     * @return 响应信息
-     */
-    @GetMapping("/task/list")
-    JobPageResult<List<JobInstanceResp>> pageTask(@SpringQueryMap JobInstanceQuery query);
-
-    /**
-     * 分页查询任务实例日志列表
-     *
-     * @param query 查询条件
-     * @return 响应信息
-     */
-    @GetMapping("/log/list")
-    Result<JobInstanceLogPageResult> pageLog(@SpringQueryMap JobInstanceLogQuery query);
 }

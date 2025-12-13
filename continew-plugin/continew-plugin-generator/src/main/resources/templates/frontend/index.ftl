@@ -1,5 +1,5 @@
 <template>
-  <div class="gi_table_page">
+  <GiPageLayout>
     <GiTable
       title="${businessName}管理"
       row-key="id"
@@ -100,15 +100,15 @@
       </template>
     </GiTable>
 
-    <${classNamePrefix}AddModal ref="${classNamePrefix}AddModalRef" @save-success="search" />
-    <${classNamePrefix}DetailDrawer ref="${classNamePrefix}DetailDrawerRef" />
-  </div>
+    <AddModal ref="AddModalRef" @save-success="search" />
+    <DetailDrawer ref="DetailDrawerRef" />
+  </GiPageLayout>
 </template>
 
 <script setup lang="ts">
 import type { TableInstance } from '@arco-design/web-vue'
-import ${classNamePrefix}AddModal from './${classNamePrefix}AddModal.vue'
-import ${classNamePrefix}DetailDrawer from './${classNamePrefix}DetailDrawer.vue'
+import AddModal from './AddModal.vue'
+import DetailDrawer from './DetailDrawer.vue'
 import { type ${classNamePrefix}Resp, type ${classNamePrefix}Query, delete${classNamePrefix}, export${classNamePrefix}, list${classNamePrefix} } from '@/apis/${apiModuleName}/${apiName}'
 import { useDownload, useTable } from '@/hooks'
 import { useDict } from '@/hooks/app'
@@ -185,21 +185,21 @@ const onExport = () => {
   useDownload(() => export${classNamePrefix}(queryForm))
 }
 
-const ${classNamePrefix}AddModalRef = ref<InstanceType<typeof ${classNamePrefix}AddModal>>()
+const AddModalRef = ref<InstanceType<typeof AddModal>>()
 // 新增
 const onAdd = () => {
-  ${classNamePrefix}AddModalRef.value?.onAdd()
+  AddModalRef.value?.onAdd()
 }
 
 // 修改
 const onUpdate = (record: ${classNamePrefix}Resp) => {
-  ${classNamePrefix}AddModalRef.value?.onUpdate(record.id)
+  AddModalRef.value?.onUpdate(record.id)
 }
 
-const ${classNamePrefix}DetailDrawerRef = ref<InstanceType<typeof ${classNamePrefix}DetailDrawer>>()
+const DetailDrawerRef = ref<InstanceType<typeof DetailDrawer>>()
 // 详情
 const onDetail = (record: ${classNamePrefix}Resp) => {
-  ${classNamePrefix}DetailDrawerRef.value?.onOpen(record.id)
+  DetailDrawerRef.value?.onOpen(record.id)
 }
 </script>
 

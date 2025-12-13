@@ -21,6 +21,7 @@ import org.dromara.sms4j.core.factory.SmsFactory;
 import org.dromara.sms4j.provider.config.BaseConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.continew.admin.common.base.service.BaseServiceImpl;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.config.sms.SmsConfigUtil;
 import top.continew.admin.system.mapper.SmsConfigMapper;
@@ -29,8 +30,7 @@ import top.continew.admin.system.model.query.SmsConfigQuery;
 import top.continew.admin.system.model.req.SmsConfigReq;
 import top.continew.admin.system.model.resp.SmsConfigResp;
 import top.continew.admin.system.service.SmsConfigService;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
+import top.continew.starter.core.util.validation.CheckUtils;
 
 import java.util.List;
 
@@ -73,7 +73,7 @@ public class SmsConfigServiceImpl extends BaseServiceImpl<SmsConfigMapper, SmsCo
             return;
         }
         // 启用状态才能设为默认配置
-        CheckUtils.throwIfNotEqual(DisEnableStatusEnum.ENABLE, smsConfig.getStatus(), "请先启用所选配置");
+        CheckUtils.throwIfEqual(DisEnableStatusEnum.DISABLE, smsConfig.getStatus(), "请先启用所选配置");
         baseMapper.lambdaUpdate().eq(SmsConfigDO::getIsDefault, true).set(SmsConfigDO::getIsDefault, false).update();
         baseMapper.lambdaUpdate().eq(SmsConfigDO::getId, id).set(SmsConfigDO::getIsDefault, true).update();
     }

@@ -32,10 +32,12 @@ import top.continew.admin.system.mapper.StorageMapper;
 import top.continew.admin.system.model.entity.FileDO;
 import top.continew.admin.system.model.entity.StorageDO;
 import top.continew.starter.core.constant.StringConstants;
+import top.continew.starter.core.util.CollUtils;
 import top.continew.starter.core.util.URLUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +56,9 @@ public class FileRecorderImpl implements FileRecorder {
 
     @Override
     public boolean save(FileInfo fileInfo) {
+        if (fileInfo.getAttr() == null) {
+            return true;
+        }
         // 保存文件信息
         FileDO file = new FileDO(fileInfo);
         StorageDO storage = (StorageDO)fileInfo.getAttr().get(ClassUtil.getClassName(StorageDO.class, false));
@@ -86,7 +91,7 @@ public class FileRecorderImpl implements FileRecorder {
     public boolean delete(String url) {
         FileDO file = this.getFileByUrl(url);
         if (file == null) {
-            return false;
+            return true;
         }
         return fileMapper.lambdaUpdate().eq(FileDO::getId, file.getId()).remove();
     }
@@ -128,9 +133,9 @@ public class FileRecorderImpl implements FileRecorder {
             return list.get(0);
         }
         // 结合存储配置进行匹配
-        List<StorageDO> storageList = storageMapper.selectByIds(list.stream().map(FileDO::getStorageId).toList());
+        List<StorageDO> storageList = storageMapper.selectByIds(CollUtils.mapToList(list, FileDO::getStorageId));
         Map<Long, StorageDO> storageMap = storageList.stream()
-            .collect(Collectors.toMap(StorageDO::getId, storage -> storage));
+            .collect(Collectors.toMap(StorageDO::getId, Function.identity(), (existing, replacement) -> existing));
         return list.stream().filter(file -> {
             // http://localhost:8000/file/user/avatar/6825e687db4174e7a297a5f8.png => http://localhost:8000/file/user/avatar
             String urlPrefix = StrUtil.subBefore(url, StringConstants.SLASH, true);

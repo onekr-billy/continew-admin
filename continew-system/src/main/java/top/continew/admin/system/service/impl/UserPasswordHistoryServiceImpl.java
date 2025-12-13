@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import top.continew.admin.system.mapper.user.UserPasswordHistoryMapper;
 import top.continew.admin.system.model.entity.user.UserPasswordHistoryDO;
 import top.continew.admin.system.service.UserPasswordHistoryService;
+import top.continew.starter.core.util.CollUtils;
 
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class UserPasswordHistoryServiceImpl implements UserPasswordHistoryServic
             return false;
         }
         // 校验是否重复使用历史密码
-        List<String> passwordList = list.stream().map(UserPasswordHistoryDO::getPassword).toList();
+        List<String> passwordList = CollUtils.mapToList(list, UserPasswordHistoryDO::getPassword);
         return passwordList.stream().anyMatch(p -> passwordEncoder.matches(password, p));
     }
 }

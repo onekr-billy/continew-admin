@@ -31,16 +31,16 @@ import top.continew.admin.auth.model.req.LoginReq;
 import top.continew.admin.auth.model.resp.LoginResp;
 import top.continew.admin.auth.model.resp.RouteResp;
 import top.continew.admin.auth.service.AuthService;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.context.RoleContext;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
+import top.continew.admin.system.constant.SystemConstants;
 import top.continew.admin.system.enums.MenuTypeEnum;
 import top.continew.admin.system.model.resp.ClientResp;
 import top.continew.admin.system.model.resp.MenuResp;
 import top.continew.admin.system.service.ClientService;
 import top.continew.admin.system.service.MenuService;
 import top.continew.admin.system.service.RoleService;
-import top.continew.starter.core.validation.ValidationUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 import top.continew.starter.extension.crud.annotation.TreeField;
 import top.continew.starter.extension.crud.autoconfigure.CrudProperties;
 
@@ -93,8 +93,8 @@ public class AuthServiceImpl implements AuthService {
         }
         // 查询菜单列表
         Set<MenuResp> menuSet = new LinkedHashSet<>();
-        if (roleSet.stream().anyMatch(r -> SysConstants.SUPER_ROLE_ID.equals(r.getId()))) {
-            menuSet.addAll(menuService.listByRoleId(SysConstants.SUPER_ROLE_ID));
+        if (roleSet.stream().anyMatch(r -> SystemConstants.SUPER_ADMIN_ROLE_ID.equals(r.getId()))) {
+            menuSet.addAll(menuService.listByRoleId(SystemConstants.SUPER_ADMIN_ROLE_ID));
         } else {
             roleSet.forEach(r -> menuSet.addAll(menuService.listByRoleId(r.getId())));
         }
@@ -104,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
         }
         // 构建路由树
         TreeField treeField = MenuResp.class.getDeclaredAnnotation(TreeField.class);
-        TreeNodeConfig treeNodeConfig = crudProperties.getTree().genTreeNodeConfig(treeField);
+        TreeNodeConfig treeNodeConfig = crudProperties.getTreeDictModel().genTreeNodeConfig(treeField);
         List<Tree<Long>> treeList = TreeUtil.build(menuList, treeField.rootId(), treeNodeConfig, (m, tree) -> {
             tree.setId(m.getId());
             tree.setParentId(m.getParentId());

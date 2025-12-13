@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import top.continew.admin.system.mapper.MessageLogMapper;
 import top.continew.admin.system.model.entity.MessageLogDO;
 import top.continew.admin.system.service.MessageLogService;
+import top.continew.starter.core.util.CollUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,9 +45,8 @@ public class MessageLogServiceImpl implements MessageLogService {
         if (CollUtil.isEmpty(messageIds)) {
             return;
         }
-        List<MessageLogDO> list = messageIds.stream()
-            .map(messageId -> new MessageLogDO(messageId, userId, LocalDateTime.now()))
-            .toList();
+        List<MessageLogDO> list = CollUtils
+            .mapToList(messageIds, messageId -> new MessageLogDO(messageId, userId, LocalDateTime.now()));
         baseMapper.insert(list);
     }
 

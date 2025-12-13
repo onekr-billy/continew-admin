@@ -16,6 +16,9 @@
 
 package top.continew.admin.system.service;
 
+import top.continew.admin.system.model.entity.RoleMenuDO;
+import top.continew.starter.data.service.IService;
+
 import java.util.List;
 
 /**
@@ -24,7 +27,7 @@ import java.util.List;
  * @author Charles7c
  * @since 2023/2/19 10:40
  */
-public interface RoleMenuService {
+public interface RoleMenuService extends IService<RoleMenuDO> {
 
     /**
      * 新增
@@ -36,14 +39,14 @@ public interface RoleMenuService {
     boolean add(List<Long> menuIds, Long roleId);
 
     /**
-     * 根据角色 ID 删除
+     * 根据角色 ID 列表删除
      *
      * @param roleIds 角色 ID 列表
      */
     void deleteByRoleIds(List<Long> roleIds);
 
     /**
-     * 根据角色 ID 查询
+     * 根据角色 ID 列表查询
      *
      * @param roleIds 角色 ID 列表
      * @return 菜单 ID 列表

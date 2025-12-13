@@ -19,9 +19,9 @@ package top.continew.admin.system.model.query;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import top.continew.admin.system.enums.OptionCategoryEnum;
-import top.continew.starter.core.validation.constraints.EnumValue;
-import top.continew.starter.data.core.annotation.Query;
-import top.continew.starter.data.core.enums.QueryType;
+import top.continew.starter.validation.constraints.EnumValue;
+import top.continew.starter.data.annotation.Query;
+import top.continew.starter.data.enums.QueryType;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -51,6 +51,7 @@ public class OptionQuery implements Serializable {
      * 类别
      */
     @Schema(description = "类别", example = "SITE")
+    @Query(type = QueryType.EQ)
     @EnumValue(value = OptionCategoryEnum.class, message = "类别无效")
     private String category;
 }

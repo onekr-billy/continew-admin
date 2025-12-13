@@ -18,10 +18,9 @@ package top.continew.admin.system.model.resp;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import top.continew.admin.common.model.resp.BaseDetailResp;
+import top.continew.admin.common.base.model.resp.BaseDetailResp;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.enums.StorageTypeEnum;
-import top.continew.starter.security.mask.annotation.JsonMask;
 
 import java.io.Serial;
 
@@ -69,13 +68,6 @@ public class StorageResp extends BaseDetailResp {
     private String accessKey;
 
     /**
-     * Secret Key
-     */
-    @Schema(description = "Secret Key", example = "")
-    @JsonMask(left = 4, right = 3)
-    private String secretKey;
-
-    /**
      * Endpoint
      */
     @Schema(description = "Endpoint", example = "")
@@ -92,6 +84,18 @@ public class StorageResp extends BaseDetailResp {
      */
     @Schema(description = "域名", example = "http://localhost:8000/file")
     private String domain;
+
+    /**
+     * 启用回收站
+     */
+    @Schema(description = "启用回收站", example = "true")
+    private Boolean recycleBinEnabled;
+
+    /**
+     * 回收站路径
+     */
+    @Schema(description = "回收站路径", example = ".RECYCLE.BIN/")
+    private String recycleBinPath;
 
     /**
      * 描述

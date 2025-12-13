@@ -23,7 +23,7 @@ import org.hibernate.validator.constraints.Length;
 import top.continew.admin.common.constant.RegexConstants;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.enums.GenderEnum;
-import top.continew.starter.core.validation.constraints.Mobile;
+import top.continew.starter.validation.constraints.Mobile;
 import top.continew.starter.extension.crud.validation.CrudValidationGroup;
 
 import java.io.Serial;
@@ -60,9 +60,9 @@ public class UserReq implements Serializable {
     private String nickname;
 
     /**
-     * 密码（加密）
+     * 密码
      */
-    @Schema(description = "密码（加密）", example = "E7c72TH+LDxKTwavjM99W1MdI9Lljh79aPKiv3XB9MXcplhm7qJ1BJCj28yaflbdVbfc366klMtjLIWQGqb0qw==")
+    @Schema(description = "密码", example = "RSA 公钥加密的密码")
     @NotBlank(message = "密码不能为空", groups = CrudValidationGroup.Create.class)
     private String password;
 

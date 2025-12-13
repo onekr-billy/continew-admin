@@ -34,6 +34,10 @@ public class AuthConfiguration {
      */
     @Bean
     public GroupedOpenApi authApi() {
-        return GroupedOpenApi.builder().group("auth").displayName("系统认证").pathsToMatch("/auth/**").build();
+        return GroupedOpenApi.builder()
+            .group("auth")
+            .displayName("系统认证")
+            .pathsToMatch("/auth/**", "/monitor/online/**")
+            .build();
     }
 }

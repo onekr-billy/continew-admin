@@ -4,11 +4,11 @@ import lombok.Data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import com.alibaba.excel.annotation.ExcelIgnoreUnannotated;
-import com.alibaba.excel.annotation.ExcelProperty;
+import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
+import cn.idev.excel.annotation.ExcelProperty;
 
-import top.continew.admin.common.model.resp.BaseDetailResp;
-import top.continew.starter.file.excel.converter.ExcelBaseEnumConverter;
+import top.continew.admin.common.base.model.resp.BaseDetailResp;
+import top.continew.starter.excel.converter.ExcelBaseEnumConverter;
 <#if imports??>
     <#list imports as className>
 import ${className};

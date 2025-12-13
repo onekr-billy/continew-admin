@@ -1,5 +1,5 @@
---- ### 项目配置
-project:
+--- ### 应用配置
+application:
   # URL（跨域配置默认放行此 URL，第三方登录回调默认使用此 URL 为前缀，请注意更改为你实际的前端 URL）
   url: http://localhost:5173
 
@@ -16,12 +16,12 @@ spring.datasource:
   username: ${DB_USER:root}
   password: ${DB_PWD:123456}
   driver-class-name: com.p6spy.engine.spy.P6SpyDriver
-#  # PostgreSQL 配置
-#  url: jdbc:p6spy:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:continew_admin}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&rewriteBatchedStatements=true&autoReconnect=true&maxReconnects=10&failOverReadOnly=false
-#  username: ${DB_USER:root}
-#  password: ${DB_PWD:123456}
-#  driver-class-name: com.p6spy.engine.spy.P6SpyDriver
-  # Hikari 连接池配置（完整配置请参阅：https://github.com/brettwooldridge/HikariCP）
+  #  # PostgreSQL 配置
+  #  url: jdbc:p6spy:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_NAME:continew_admin}?options=-c%20TimeZone=Asia/Shanghai&sslmode=prefer&channelBinding=prefer&stringtype=unspecified
+  #  username: ${DB_USER:postgres}
+  #  password: ${DB_PWD:123456}
+  #  driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+  # Hikari 连接池配置
   hikari:
     # 最大连接数量（默认 10，根据实际环境调整）
     # 注意：当连接达到上限，并且没有空闲连接可用时，获取连接将在超时前阻塞最多 connectionTimeout 毫秒
@@ -119,15 +119,22 @@ logging:
   file:
     path: ./logs
 
---- ### 安全配置：字段加/解密配置
-continew-starter.security:
-  crypto:
-    enabled: true
-    # 对称加密算法密钥
-    password: abcdefghijklmnop
-    # 非对称加密算法密钥（在线生成 RSA 密钥对：http://web.chacuo.net/netrsakeypair）
-    public-key: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAM51dgYtMyF+tTQt80sfFOpSV27a7t9uaUVeFrdGiVxscuizE7H8SMntYqfn9lp8a5GH5P1/GGehVjUD2gF/4kcCAwEAAQ==
-    private-key: MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEAznV2Bi0zIX61NC3zSx8U6lJXbtru325pRV4Wt0aJXGxy6LMTsfxIye1ip+f2WnxrkYfk/X8YZ6FWNQPaAX/iRwIDAQABAkEAk/VcAusrpIqA5Ac2P5Tj0VX3cOuXmyouaVcXonr7f+6y2YTjLQuAnkcfKKocQI/juIRQBFQIqqW/m1nmz1wGeQIhAO8XaA/KxzOIgU0l/4lm0A2Wne6RokJ9HLs1YpOzIUmVAiEA3Q9DQrpAlIuiT1yWAGSxA9RxcjUM/1kdVLTkv0avXWsCIE0X8woEjK7lOSwzMG6RpEx9YHdopjViOj1zPVH61KTxAiBmv/dlhqkJ4rV46fIXELZur0pj6WC3N7a4brR8a+CLLQIhAMQyerWl2cPNVtE/8tkziHKbwW3ZUiBXU24wFxedT9iV
+--- ### 加密配置：密码编码器配置
+continew-starter.encrypt.password-encoder:
+  enabled: true
+  # 默认启用的编码器算法（默认：BCrypt 加密算法）
+  algorithm: BCRYPT
+
+--- ### 加密配置：字段加/解密配置
+continew-starter.encrypt.field:
+  enabled: true
+  # 默认算法，即 @FieldEncrypt 默认采用的算法（默认：AES 对称加密算法）
+  algorithm: AES
+  # 对称加密算法密钥
+  password: abcdefghijklmnop
+  # 非对称加密算法密钥（在线生成 RSA 密钥对：http://web.chacuo.net/netrsakeypair）
+  public-key: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAM51dgYtMyF+tTQt80sfFOpSV27a7t9uaUVeFrdGiVxscuizE7H8SMntYqfn9lp8a5GH5P1/GGehVjUD2gF/4kcCAwEAAQ==
+  private-key: MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEAznV2Bi0zIX61NC3zSx8U6lJXbtru325pRV4Wt0aJXGxy6LMTsfxIye1ip+f2WnxrkYfk/X8YZ6FWNQPaAX/iRwIDAQABAkEAk/VcAusrpIqA5Ac2P5Tj0VX3cOuXmyouaVcXonr7f+6y2YTjLQuAnkcfKKocQI/juIRQBFQIqqW/m1nmz1wGeQIhAO8XaA/KxzOIgU0l/4lm0A2Wne6RokJ9HLs1YpOzIUmVAiEA3Q9DQrpAlIuiT1yWAGSxA9RxcjUM/1kdVLTkv0avXWsCIE0X8woEjK7lOSwzMG6RpEx9YHdopjViOj1zPVH61KTxAiBmv/dlhqkJ4rV46fIXELZur0pj6WC3N7a4brR8a+CLLQIhAMQyerWl2cPNVtE/8tkziHKbwW3ZUiBXU24wFxedT9iV
 
 --- ### 验证码配置
 continew-starter.captcha:
@@ -231,14 +238,18 @@ sa-token.extension:
 justauth:
   enabled: true
   type:
+    WECHAT_OPEN:
+      client-id: wx4a**********bcc2
+      client-secret: 32e5*************************1ef
+      redirect-uri: ${application.url}/social/callback?source=wechat_open
     GITEE:
       client-id: 5d271b7f638941812aaf8bfc2e2f08f06d6235ef934e0e39537e2364eb8452c4
       client-secret: 1f7d08**********5b7**********29e
-      redirect-uri: ${project.url}/social/callback?source=gitee
+      redirect-uri: ${application.url}/social/callback?source=gitee
     GITHUB:
       client-id: 38080dad08cfbdfacca9
       client-secret: 1f7d08**********5b7**********29e
-      redirect-uri: ${project.url}/social/callback?source=github
+      redirect-uri: ${application.url}/social/callback?source=github
   cache:
     type: REDIS
 

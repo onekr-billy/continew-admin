@@ -23,14 +23,12 @@ import cn.crane4j.core.executor.handler.OneToManyAssembleOperationHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import top.continew.admin.common.constant.ContainerConstants;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.enums.GenderEnum;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 角色关联用户响应参数
@@ -126,6 +124,6 @@ public class RoleUserResp implements Serializable {
     private List<String> roleNames;
 
     public Boolean getDisabled() {
-        return this.getIsSystem() && Objects.equals(roleId, SysConstants.SUPER_ROLE_ID);
+        return this.getIsSystem();
     }
 }

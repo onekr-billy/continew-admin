@@ -19,13 +19,14 @@ package top.continew.admin.system.mapper.user;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-import top.continew.admin.common.config.mybatis.DataPermissionMapper;
+import top.continew.admin.common.base.mapper.DataPermissionMapper;
 import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.model.resp.user.UserDetailResp;
 import top.continew.starter.extension.datapermission.annotation.DataPermission;
-import top.continew.starter.security.crypto.annotation.FieldEncrypt;
+import top.continew.starter.encrypt.field.annotation.FieldEncrypt;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ import java.util.List;
  * @author Charles7c
  * @since 2022/12/22 21:47
  */
+@Mapper
 public interface UserMapper extends DataPermissionMapper<UserDO> {
 
     /**
@@ -63,7 +65,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param username 用户名
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE username = #{username}")
+    @Select("SELECT * FROM sys_user WHERE username = #{username} AND deleted = 0")
     UserDO selectByUsername(@Param("username") String username);
 
     /**
@@ -72,7 +74,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param phone 手机号
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE phone = #{phone}")
+    @Select("SELECT * FROM sys_user WHERE phone = #{phone} AND deleted = 0")
     UserDO selectByPhone(@FieldEncrypt @Param("phone") String phone);
 
     /**
@@ -81,7 +83,7 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param email 邮箱
      * @return 用户信息
      */
-    @Select("SELECT * FROM sys_user WHERE email = #{email}")
+    @Select("SELECT * FROM sys_user WHERE email = #{email} AND deleted = 0")
     UserDO selectByEmail(@FieldEncrypt @Param("email") String email);
 
     /**
@@ -90,24 +92,6 @@ public interface UserMapper extends DataPermissionMapper<UserDO> {
      * @param id ID
      * @return 昵称
      */
-    @Select("SELECT nickname FROM sys_user WHERE id = #{id}")
+    @Select("SELECT nickname FROM sys_user WHERE id = #{id} AND deleted = 0")
     String selectNicknameById(@Param("id") Long id);
-
-    /**
-     * 根据邮箱查询数量
-     *
-     * @param email 邮箱
-     * @param id    ID
-     * @return 用户数量
-     */
-    Long selectCountByEmail(@FieldEncrypt @Param("email") String email, @Param("id") Long id);
-
-    /**
-     * 根据手机号查询数量
-     *
-     * @param phone 手机号
-     * @param id    ID
-     * @return 用户数量
-     */
-    Long selectCountByPhone(@FieldEncrypt @Param("phone") String phone, @Param("id") Long id);
 }

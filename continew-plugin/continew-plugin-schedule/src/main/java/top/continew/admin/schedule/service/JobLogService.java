@@ -16,15 +16,9 @@
 
 package top.continew.admin.schedule.service;
 
-import top.continew.admin.schedule.model.JobInstanceLogPageResult;
-import top.continew.admin.schedule.model.query.JobInstanceLogQuery;
-import top.continew.admin.schedule.model.query.JobInstanceQuery;
 import top.continew.admin.schedule.model.query.JobLogQuery;
-import top.continew.admin.schedule.model.resp.JobInstanceResp;
 import top.continew.admin.schedule.model.resp.JobLogResp;
 import top.continew.starter.extension.crud.model.resp.PageResp;
-
-import java.util.List;
 
 /**
  * 任务日志业务接口
@@ -58,20 +52,4 @@ public interface JobLogService {
      * @return 重试结果
      */
     boolean retry(Long id);
-
-    /**
-     * 查询任务实例列表
-     *
-     * @param query 查询条件
-     * @return 列表信息
-     */
-    List<JobInstanceResp> listInstance(JobInstanceQuery query);
-
-    /**
-     * 分页查询任务实例日志列表
-     *
-     * @param query 查询条件
-     * @return 分页列表信息
-     */
-    JobInstanceLogPageResult pageInstanceLog(JobInstanceLogQuery query);
 }

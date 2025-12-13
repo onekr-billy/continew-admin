@@ -16,17 +16,18 @@
 
 package top.continew.admin.config.satoken;
 
-import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.annotation.SaIgnore;
 import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.context.model.SaRequest;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
-import cn.dev33.satoken.sign.SaSignTemplate;
-import cn.dev33.satoken.sign.SaSignUtil;
+import cn.dev33.satoken.sign.SaSignManager;
+import cn.dev33.satoken.sign.template.SaSignTemplate;
+import cn.dev33.satoken.sign.template.SaSignUtil;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -35,16 +36,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
+import top.continew.admin.common.config.crud.CrudApiPermissionPrefixCache;
 import top.continew.admin.common.context.UserContext;
 import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.open.sign.OpenApiSignTemplate;
 import top.continew.starter.auth.satoken.autoconfigure.SaTokenExtensionProperties;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.core.exception.BusinessException;
-import top.continew.starter.core.validation.CheckUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
 import top.continew.starter.extension.crud.annotation.CrudRequestMapping;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Sa-Token 配置
@@ -53,6 +56,7 @@ import java.util.*;
  * @author chengzi
  * @since 2022/12/19 22:13
  */
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SaTokenConfiguration {
@@ -75,7 +79,7 @@ public class SaTokenConfiguration {
      */
     @Bean
     public SaInterceptor saInterceptor() {
-        SaManager.setSaSignTemplate(signTemplate);
+        SaSignManager.setSaSignTemplate(signTemplate);
         return new SaExtensionInterceptor(handle -> SaRouter.match(StringConstants.PATH_PATTERN)
             .notMatch(properties.getSecurity().getExcludes())
             .check(r -> {
@@ -101,13 +105,13 @@ public class SaTokenConfiguration {
     }
 
     /**
-     * 配置 sa-token SaIgnore 注解排除路径
+     * 配置 sa-token {@link SaIgnore} 注解排除路径
      * <p>主要针对 @CrudRequestMapping 注解</p>
      */
     @EventListener(ApplicationReadyEvent.class)
     public void configureSaTokenExcludes() {
         String[] beanNames = applicationContext.getBeanDefinitionNames();
-        List<String> additionalExcludes = Arrays.stream(beanNames).parallel().map(beanName -> {
+        List<String> additionalExcludes = Arrays.stream(beanNames).map(beanName -> {
             Object bean = applicationContext.getBean(beanName);
             Class<?> clazz = bean.getClass();
             if (AopUtils.isAopProxy(bean)) {
@@ -115,18 +119,24 @@ public class SaTokenConfiguration {
             }
             CrudRequestMapping crudRequestMapping = AnnotationUtils.findAnnotation(clazz, CrudRequestMapping.class);
             SaIgnore saIgnore = AnnotationUtils.findAnnotation(clazz, SaIgnore.class);
-
-            if (crudRequestMapping != null && saIgnore != null) {
-                return crudRequestMapping.value() + "/**";
+            if (crudRequestMapping != null) {
+                // 缓存权限前缀
+                CrudApiPermissionPrefixCache.put(clazz, crudRequestMapping.value());
+                // 使用 @CrudRequestMapping 的 Controller，如果使用了 @SaIgnore 注解，则表示忽略认证和权限校验
+                if (saIgnore != null) {
+                    return crudRequestMapping.value() + StringConstants.PATH_PATTERN;
+                }
             }
             return null;
         }).filter(Objects::nonNull).toList();
         if (!additionalExcludes.isEmpty()) {
             // 合并现有的 excludes 和新扫描到的
-            List<String> allExcludes = new ArrayList<>(Arrays.asList(properties.getSecurity().getExcludes()));
-            allExcludes.addAll(additionalExcludes);
-            // 转回数组
-            properties.getSecurity().setExcludes(allExcludes.toArray(new String[0]));
+            String[] existingExcludes = Optional.ofNullable(properties.getSecurity().getExcludes())
+                .orElse(new String[0]);
+            String[] combinedExcludes = Stream.concat(Arrays.stream(existingExcludes), additionalExcludes.stream())
+                .toArray(String[]::new);
+            properties.getSecurity().setExcludes(combinedExcludes);
         }
+        log.debug("缓存 CRUD API 权限前缀完成：{}", CrudApiPermissionPrefixCache.getAll().values());
     }
 }

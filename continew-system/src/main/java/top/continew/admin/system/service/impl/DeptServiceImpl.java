@@ -21,7 +21,9 @@ import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import top.continew.admin.common.base.service.BaseServiceImpl;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.mapper.DeptMapper;
 import top.continew.admin.system.model.entity.DeptDO;
@@ -31,16 +33,12 @@ import top.continew.admin.system.model.resp.DeptResp;
 import top.continew.admin.system.service.DeptService;
 import top.continew.admin.system.service.RoleDeptService;
 import top.continew.admin.system.service.UserService;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.data.core.enums.DatabaseType;
-import top.continew.starter.data.core.util.MetaUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.data.enums.DatabaseType;
+import top.continew.starter.data.util.MetaUtils;
 
 import javax.sql.DataSource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 部门业务实现
@@ -53,24 +51,20 @@ import java.util.Optional;
 public class DeptServiceImpl extends BaseServiceImpl<DeptMapper, DeptDO, DeptResp, DeptResp, DeptQuery, DeptReq> implements DeptService {
 
     private final RoleDeptService roleDeptService;
+    private final DataSource dataSource;
+    @Lazy
     @Resource
     private UserService userService;
-    @Resource
-    private DataSource dataSource;
 
     @Override
     public void beforeCreate(DeptReq req) {
-        String name = req.getName();
-        boolean isExists = this.isNameExists(name, req.getParentId(), null);
-        CheckUtils.throwIf(isExists, "新增失败，[{}] 已存在", name);
+        this.checkNameRepeat(req.getName(), req.getParentId(), null);
         req.setAncestors(this.getAncestors(req.getParentId()));
     }
 
     @Override
     public void beforeUpdate(DeptReq req, Long id) {
-        String name = req.getName();
-        boolean isExists = this.isNameExists(name, req.getParentId(), id);
-        CheckUtils.throwIf(isExists, "修改失败，[{}] 已存在", name);
+        this.checkNameRepeat(req.getName(), req.getParentId(), id);
         DeptDO oldDept = super.getById(id);
         String oldName = oldDept.getName();
         DisEnableStatusEnum newStatus = req.getStatus();
@@ -131,7 +125,7 @@ public class DeptServiceImpl extends BaseServiceImpl<DeptMapper, DeptDO, DeptRes
     }
 
     @Override
-    public int countByNames(List<String> deptNames) {
+    public int countByNames(Set<String> deptNames) {
         if (CollUtil.isEmpty(deptNames)) {
             return 0;
         }
@@ -139,19 +133,18 @@ public class DeptServiceImpl extends BaseServiceImpl<DeptMapper, DeptDO, DeptRes
     }
 
     /**
-     * 名称是否存在
+     * 检查名称是否重复
      *
      * @param name     名称
      * @param parentId 上级 ID
      * @param id       ID
-     * @return 是否存在
      */
-    private boolean isNameExists(String name, Long parentId, Long id) {
-        return baseMapper.lambdaQuery()
+    private void checkNameRepeat(String name, Long parentId, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
             .eq(DeptDO::getName, name)
             .eq(DeptDO::getParentId, parentId)
             .ne(id != null, DeptDO::getId, id)
-            .exists();
+            .exists(), "名称为 [{}] 的部门已存在", name);
     }
 
     /**

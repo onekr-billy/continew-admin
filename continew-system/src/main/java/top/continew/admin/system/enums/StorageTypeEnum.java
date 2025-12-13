@@ -26,7 +26,7 @@ import top.continew.admin.system.validation.ValidationGroup;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.core.enums.BaseEnum;
 import top.continew.starter.core.util.URLUtils;
-import top.continew.starter.core.validation.ValidationUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 /**
  * 存储类型枚举
@@ -65,7 +65,7 @@ public enum StorageTypeEnum implements BaseEnum<Integer> {
         public void validate(StorageReq req) {
             ValidationUtils.validate(req, ValidationGroup.Storage.OSS.class);
             ValidationUtils.throwIf(StrUtil.isNotBlank(req.getDomain()) && !ReUtil
-                .isMatch(RegexConstants.HTTP_DOMAIN_URL, req.getDomain()), "域名格式不正确");
+                .isMatch(RegexConstants.URL_HTTP_NOT_IP, req.getDomain()), "域名格式不正确");
         }
     };
 
@@ -88,6 +88,11 @@ public enum StorageTypeEnum implements BaseEnum<Integer> {
         // 域名需要以 “/” 结尾（x-file-storage 在拼接路径时都是直接 + 拼接，所以规范要求每一级都要以 “/” 结尾，且后面路径不能以 “/” 开头）
         if (StrUtil.isNotBlank(req.getDomain())) {
             req.setDomain(StrUtil.appendIfMissing(req.getDomain(), StringConstants.SLASH));
+        }
+        // 回收站路径需要以 “/” 结尾
+        if (Boolean.TRUE.equals(req.getRecycleBinEnabled())) {
+            req.setRecycleBinPath(StrUtil.appendIfMissing(StrUtil.removePrefix(req
+                .getRecycleBinPath(), StringConstants.SLASH), StringConstants.SLASH));
         }
     }
 }

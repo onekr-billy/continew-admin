@@ -20,32 +20,36 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.alicp.jetcache.anno.CacheInvalidate;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.continew.admin.common.base.service.BaseServiceImpl;
 import top.continew.admin.common.constant.CacheConstants;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.context.RoleContext;
 import top.continew.admin.common.context.UserContext;
 import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DataScopeEnum;
+import top.continew.admin.common.enums.RoleCodeEnum;
+import top.continew.admin.system.constant.SystemConstants;
 import top.continew.admin.system.mapper.RoleMapper;
 import top.continew.admin.system.model.entity.RoleDO;
 import top.continew.admin.system.model.query.RoleQuery;
+import top.continew.admin.system.model.req.RolePermissionUpdateReq;
 import top.continew.admin.system.model.req.RoleReq;
-import top.continew.admin.system.model.req.RoleUpdatePermissionReq;
 import top.continew.admin.system.model.resp.MenuResp;
 import top.continew.admin.system.model.resp.role.RoleDetailResp;
 import top.continew.admin.system.model.resp.role.RoleResp;
 import top.continew.admin.system.service.*;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.extension.crud.model.query.SortQuery;
+import top.continew.starter.extension.crud.model.resp.LabelValueResp;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 角色业务实现
@@ -57,18 +61,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleResp, RoleDetailResp, RoleQuery, RoleReq> implements RoleService {
 
-    private final MenuService menuService;
+    @Resource
+    private MenuService menuService;
+    @Resource
+    private UserRoleService userRoleService;
     private final RoleMenuService roleMenuService;
     private final RoleDeptService roleDeptService;
-    private final UserRoleService userRoleService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long create(RoleReq req) {
-        String name = req.getName();
-        CheckUtils.throwIf(this.isNameExists(name, null), "新增失败，[{}] 已存在", name);
+        this.checkNameRepeat(req.getName(), null);
         String code = req.getCode();
-        CheckUtils.throwIf(this.isCodeExists(code, null), "新增失败，[{}] 已存在", code);
+        this.checkCodeRepeat(code, null);
+        // 防止租户添加超级管理员
+        CheckUtils.throwIfEqual(RoleCodeEnum.SUPER_ADMIN.getCode(), code, "编码 [{}] 禁止使用", code);
         // 新增信息
         Long roleId = super.create(req);
         // 保存角色和部门关联
@@ -79,8 +86,7 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void update(RoleReq req, Long id) {
-        String name = req.getName();
-        CheckUtils.throwIf(this.isNameExists(name, id), "修改失败，[{}] 已存在", name);
+        this.checkNameRepeat(req.getName(), id);
         RoleDO oldRole = super.getById(id);
         CheckUtils.throwIfNotEqual(req.getCode(), oldRole.getCode(), "角色编码不允许修改", oldRole.getName());
         DataScopeEnum oldDataScope = oldRole.getDataScope();
@@ -89,7 +95,7 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
         }
         // 更新信息
         super.update(req, id);
-        if (SysConstants.SUPER_ROLE_CODE.equals(req.getCode())) {
+        if (RoleCodeEnum.isSuperRoleCode(req.getCode())) {
             return;
         }
         // 保存角色和部门关联
@@ -117,10 +123,31 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
     }
 
     @Override
+    public void fill(Object obj) {
+        super.fill(obj);
+        if (obj instanceof RoleDetailResp detail) {
+            Long roleId = detail.getId();
+            List<MenuResp> list = menuService.listByRoleId(roleId);
+            List<Long> menuIds = CollUtils.mapToList(list, MenuResp::getId);
+            detail.setMenuIds(menuIds);
+        }
+    }
+
+    @Override
+    public List<LabelValueResp> dict(RoleQuery query, SortQuery sortQuery) {
+        boolean isTenantAdmin = UserContextHolder.isTenantAdmin();
+        query.setExcludeRoleCodes(isTenantAdmin
+            ? List.of(RoleCodeEnum.SUPER_ADMIN.getCode())
+            : RoleCodeEnum.getSuperRoleCodes());
+        return super.dict(query, sortQuery);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     @CacheInvalidate(key = "#id", name = CacheConstants.ROLE_MENU_KEY_PREFIX)
-    public void updatePermission(Long id, RoleUpdatePermissionReq req) {
-        super.getById(id);
+    public void updatePermission(Long id, RolePermissionUpdateReq req) {
+        RoleDO role = super.getById(id);
+        CheckUtils.throwIf(Boolean.TRUE.equals(role.getIsSystem()), "[{}] 是系统内置角色，不允许修改角色功能权限", role.getName());
         // 保存角色和菜单关联
         boolean isSaveMenuSuccess = roleMenuService.add(req.getMenuIds(), id);
         // 如果功能权限有变更，则更新在线用户权限信息
@@ -135,7 +162,8 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
 
     @Override
     public void assignToUsers(Long id, List<Long> userIds) {
-        super.getById(id);
+        RoleDO role = super.getById(id);
+        CheckUtils.throwIf(Boolean.TRUE.equals(role.getIsSystem()), "[{}] 是系统内置角色，不允许分配角色给其他用户", role.getName());
         // 保存用户和角色关联
         userRoleService.assignRoleToUsers(id, userIds);
         // 更新用户上下文
@@ -143,22 +171,24 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
     }
 
     @Override
-    public void fill(Object obj) {
-        super.fill(obj);
-        if (obj instanceof RoleDetailResp detail) {
-            Long roleId = detail.getId();
-            List<MenuResp> list = menuService.listByRoleId(roleId);
-            List<Long> menuIds = list.stream().map(MenuResp::getId).toList();
-            detail.setMenuIds(menuIds);
-        }
+    public void updateUserContext(Long roleId) {
+        List<Long> userIdList = userRoleService.listUserIdByRoleId(roleId);
+        userIdList.forEach(userId -> {
+            UserContext userContext = UserContextHolder.getContext(userId);
+            if (userContext != null) {
+                userContext.setRoles(this.listByUserId(userId));
+                userContext.setPermissions(this.listPermissionByUserId(userId));
+                UserContextHolder.setContext(userContext);
+            }
+        });
     }
 
     @Override
     public Set<String> listPermissionByUserId(Long userId) {
         Set<String> roleCodeSet = this.listCodeByUserId(userId);
         // 超级管理员赋予全部权限
-        if (roleCodeSet.contains(SysConstants.SUPER_ROLE_CODE)) {
-            return CollUtil.newHashSet(SysConstants.ALL_PERMISSION);
+        if (roleCodeSet.contains(RoleCodeEnum.SUPER_ADMIN.getCode())) {
+            return CollUtil.newHashSet(SystemConstants.ALL_PERMISSION);
         }
         return menuService.listPermissionByUserId(userId);
     }
@@ -170,7 +200,7 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
             return Collections.emptySet();
         }
         List<RoleDO> roleList = baseMapper.lambdaQuery().select(RoleDO::getCode).in(RoleDO::getId, roleIdList).list();
-        return roleList.stream().map(RoleDO::getCode).collect(Collectors.toSet());
+        return CollUtils.mapToSet(roleList, RoleDO::getCode);
     }
 
     @Override
@@ -183,14 +213,12 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
             .select(RoleDO::getId, RoleDO::getCode, RoleDO::getDataScope)
             .in(RoleDO::getId, roleIdList)
             .list();
-        return roleList.stream()
-            .map(r -> new RoleContext(r.getId(), r.getCode(), r.getDataScope()))
-            .collect(Collectors.toSet());
+        return CollUtils.mapToSet(roleList, r -> new RoleContext(r.getId(), r.getCode(), r.getDataScope()));
     }
 
     @Override
-    public RoleDO getByCode(String code) {
-        return baseMapper.lambdaQuery().eq(RoleDO::getCode, code).one();
+    public Long getIdByCode(String code) {
+        return baseMapper.lambdaQuery().eq(RoleDO::getCode, code).oneOpt().map(RoleDO::getId).orElse(null);
     }
 
     @Override
@@ -210,41 +238,28 @@ public class RoleServiceImpl extends BaseServiceImpl<RoleMapper, RoleDO, RoleRes
     }
 
     /**
-     * 名称是否存在
+     * 检查名称是否重复
      *
      * @param name 名称
      * @param id   ID
-     * @return 是否存在
      */
-    private boolean isNameExists(String name, Long id) {
-        return baseMapper.lambdaQuery().eq(RoleDO::getName, name).ne(id != null, RoleDO::getId, id).exists();
+    private void checkNameRepeat(String name, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
+            .eq(RoleDO::getName, name)
+            .ne(id != null, RoleDO::getId, id)
+            .exists(), "名称为 [{}] 的角色已存在", name);
     }
 
     /**
-     * 编码是否存在
+     * 检查编码是否重复
      *
      * @param code 编码
      * @param id   ID
-     * @return 是否存在
      */
-    private boolean isCodeExists(String code, Long id) {
-        return baseMapper.lambdaQuery().eq(RoleDO::getCode, code).ne(id != null, RoleDO::getId, id).exists();
-    }
-
-    /**
-     * 更新用户上下文
-     *
-     * @param roleId 角色 ID
-     */
-    private void updateUserContext(Long roleId) {
-        List<Long> userIdList = userRoleService.listUserIdByRoleId(roleId);
-        userIdList.parallelStream().forEach(userId -> {
-            UserContext userContext = UserContextHolder.getContext(userId);
-            if (userContext != null) {
-                userContext.setRoles(this.listByUserId(userId));
-                userContext.setPermissions(this.listPermissionByUserId(userId));
-                UserContextHolder.setContext(userContext);
-            }
-        });
+    private void checkCodeRepeat(String code, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
+            .eq(RoleDO::getCode, code)
+            .ne(id != null, RoleDO::getId, id)
+            .exists(), "编码为 [{}] 的角色已存在", code);
     }
 }

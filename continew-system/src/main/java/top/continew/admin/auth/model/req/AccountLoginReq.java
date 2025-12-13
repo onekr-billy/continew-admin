@@ -43,9 +43,9 @@ public class AccountLoginReq extends LoginReq {
     private String username;
 
     /**
-     * 密码（加密）
+     * 密码
      */
-    @Schema(description = "密码（加密）", example = "HHwZoiBwCfh0xLdWOAd0bHOkEZlIMMOQKJyeFUw9T3ArrhL57od2i42s1o0sSXKkeHPJXvQsninhPFH2lArDDQ==")
+    @Schema(description = "密码", example = "RSA 公钥加密的密码")
     @NotBlank(message = "密码不能为空")
     private String password;
 

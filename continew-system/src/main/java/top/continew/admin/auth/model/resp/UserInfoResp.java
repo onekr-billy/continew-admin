@@ -27,6 +27,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -139,6 +140,12 @@ public class UserInfoResp implements Serializable {
      */
     @Schema(description = "角色编码集合", example = "[\"test\"]")
     private Set<String> roles;
+
+    /**
+     * 角色名称列表
+     */
+    @Schema(description = "角色名称列表", example = "测试人员")
+    private List<String> roleNames;
 
     public LocalDate getRegistrationDate() {
         return createTime.toLocalDate();

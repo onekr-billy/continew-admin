@@ -19,7 +19,7 @@ package top.continew.admin.system.service;
 import top.continew.admin.system.enums.OptionCategoryEnum;
 import top.continew.admin.system.model.query.OptionQuery;
 import top.continew.admin.system.model.req.OptionReq;
-import top.continew.admin.system.model.req.OptionResetValueReq;
+import top.continew.admin.system.model.req.OptionValueResetReq;
 import top.continew.admin.system.model.resp.OptionResp;
 
 import java.util.List;
@@ -62,7 +62,7 @@ public interface OptionService {
      *
      * @param req 重置信息
      */
-    void resetValue(OptionResetValueReq req);
+    void resetValue(OptionValueResetReq req);
 
     /**
      * 根据编码查询参数值

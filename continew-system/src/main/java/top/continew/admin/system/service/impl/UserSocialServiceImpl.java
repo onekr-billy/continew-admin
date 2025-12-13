@@ -25,12 +25,12 @@ import top.continew.admin.system.enums.SocialSourceEnum;
 import top.continew.admin.system.mapper.user.UserSocialMapper;
 import top.continew.admin.system.model.entity.user.UserSocialDO;
 import top.continew.admin.system.service.UserSocialService;
-import top.continew.starter.core.validation.CheckUtils;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 用户社会化关联业务实现
@@ -73,7 +73,7 @@ public class UserSocialServiceImpl implements UserSocialService {
         String source = authUser.getSource();
         String openId = authUser.getUuid();
         List<UserSocialDO> userSocialList = this.listByUserId(userId);
-        Set<String> boundSocialSet = userSocialList.stream().map(UserSocialDO::getSource).collect(Collectors.toSet());
+        Set<String> boundSocialSet = CollUtils.mapToSet(userSocialList, UserSocialDO::getSource);
         String description = SocialSourceEnum.valueOf(source).getDescription();
         CheckUtils.throwIf(boundSocialSet.contains(source), "您已经绑定过了 [{}] 平台，请先解绑", description);
         UserSocialDO userSocial = this.getBySourceAndOpenId(source, openId);

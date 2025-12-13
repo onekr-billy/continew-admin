@@ -33,6 +33,8 @@ import top.continew.admin.system.mapper.NoticeMapper;
 import top.continew.admin.system.model.entity.NoticeDO;
 import top.continew.admin.system.service.NoticeService;
 import top.continew.starter.core.constant.PropertiesConstants;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.extension.tenant.annotation.TenantIgnore;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,6 +57,7 @@ public class NoticePublishJob {
     @ConditionalOnProperty(prefix = "snail-job", name = PropertiesConstants.ENABLED, havingValue = "false")
     public static class Scheduler {
 
+        @TenantIgnore
         @Scheduled(cron = "0 * * * * ?")
         @Transactional(rollbackFor = Exception.class)
         public void publishNoticeWithSchedule() {
@@ -71,6 +74,7 @@ public class NoticePublishJob {
     @ConditionalOnEnabledScheduleJob
     public static class ScheduleJob {
 
+        @TenantIgnore
         @JobExecutor(name = "NoticePublishJob")
         @Transactional(rollbackFor = Exception.class)
         public void publishNoticeWithScheduleJob() {
@@ -106,7 +110,7 @@ public class NoticePublishJob {
         // 更新状态
         noticeMapper.lambdaUpdate()
             .set(NoticeDO::getStatus, NoticeStatusEnum.PUBLISHED)
-            .in(NoticeDO::getId, list.stream().map(NoticeDO::getId).toList())
+            .in(NoticeDO::getId, CollUtils.mapToList(list, NoticeDO::getId))
             .update();
     }
 }

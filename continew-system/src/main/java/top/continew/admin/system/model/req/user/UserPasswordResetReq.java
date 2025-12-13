@@ -37,9 +37,9 @@ public class UserPasswordResetReq implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 新密码（加密）
+     * 新密码
      */
-    @Schema(description = "新密码（加密）", example = "Gzc78825P5baH190lRuZFb9KJxRt/psN2jiyOMPoc5WRcCvneCwqDm3Q33BZY56EzyyVy7vQu7jQwYTK4j1+5w==")
+    @Schema(description = "新密码", example = "RSA 公钥加密的新密码")
     @NotBlank(message = "新密码不能为空")
     private String newPassword;
 }

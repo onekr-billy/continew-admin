@@ -19,7 +19,10 @@ package top.continew.admin.schedule.api;
 import com.aizuda.snailjob.common.core.model.Result;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import top.continew.admin.schedule.config.FeignRequestInterceptor;
 import top.continew.admin.schedule.model.JobPageResult;
 import top.continew.admin.schedule.model.query.JobQuery;
@@ -28,7 +31,6 @@ import top.continew.admin.schedule.model.req.JobTriggerReq;
 import top.continew.admin.schedule.model.resp.JobResp;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * 任务 REST API
@@ -66,15 +68,6 @@ public interface JobApi {
      */
     @PutMapping
     Result<Boolean> update(@RequestBody JobReq req);
-
-    /**
-     * 删除
-     *
-     * @param ids ID 列表
-     * @return 响应信息
-     */
-    @DeleteMapping("/ids")
-    Result<Boolean> delete(@RequestBody Set<Long> ids);
 
     /**
      * 执行

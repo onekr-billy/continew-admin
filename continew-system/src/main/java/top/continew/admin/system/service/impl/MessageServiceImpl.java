@@ -37,6 +37,7 @@ import top.continew.admin.system.model.resp.message.MessageTypeUnreadResp;
 import top.continew.admin.system.model.resp.message.MessageUnreadResp;
 import top.continew.admin.system.service.MessageLogService;
 import top.continew.admin.system.service.MessageService;
+import top.continew.starter.core.util.CollUtils;
 import top.continew.starter.extension.crud.model.query.PageQuery;
 import top.continew.starter.extension.crud.model.resp.PageResp;
 import top.continew.starter.messaging.websocket.util.WebSocketUtils;
@@ -75,7 +76,7 @@ public class MessageServiceImpl implements MessageService {
     public void readMessage(List<Long> ids, Long userId) {
         // 查询当前用户的未读消息
         List<MessageDO> list = baseMapper.selectUnreadListByUserId(userId);
-        List<Long> unreadIds = list.stream().map(MessageDO::getId).toList();
+        List<Long> unreadIds = CollUtils.mapToList(list, MessageDO::getId);
         messageLogService.addWithUserId(CollUtil.isNotEmpty(ids)
             ? CollUtil.intersection(unreadIds, ids).stream().toList()
             : unreadIds, userId);

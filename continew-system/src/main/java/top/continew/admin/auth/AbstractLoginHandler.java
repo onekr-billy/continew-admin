@@ -18,12 +18,15 @@ package top.continew.admin.auth;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import cn.dev33.satoken.stp.parameter.enums.SaLogoutMode;
+import cn.dev33.satoken.stp.parameter.enums.SaReplacedRange;
 import cn.hutool.core.bean.BeanUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import top.continew.admin.auth.model.req.LoginReq;
+import top.continew.admin.auth.model.resp.LoginResp;
 import top.continew.admin.common.context.RoleContext;
 import top.continew.admin.common.context.UserContext;
 import top.continew.admin.common.context.UserContextHolder;
@@ -36,10 +39,13 @@ import top.continew.admin.system.service.DeptService;
 import top.continew.admin.system.service.OptionService;
 import top.continew.admin.system.service.RoleService;
 import top.continew.admin.system.service.UserService;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.core.validation.Validator;
 import top.continew.starter.core.util.ServletUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.core.util.validation.Validator;
+import top.continew.starter.extension.tenant.context.TenantContextHolder;
+import top.continew.starter.extension.tenant.util.TenantUtils;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -85,17 +91,28 @@ public abstract class AbstractLoginHandler<T extends LoginReq> implements LoginH
      *
      * @param user   用户信息
      * @param client 客户端信息
-     * @return token 令牌信息
+     * @return 登录响应参数
      */
-    protected String authenticate(UserDO user, ClientResp client) {
+    protected LoginResp authenticate(UserDO user, ClientResp client) {
         // 获取权限、角色、密码过期天数
         Long userId = user.getId();
-        CompletableFuture<Set<String>> permissionFuture = CompletableFuture.supplyAsync(() -> roleService
-            .listPermissionByUserId(userId), threadPoolTaskExecutor);
-        CompletableFuture<Set<RoleContext>> roleFuture = CompletableFuture.supplyAsync(() -> roleService
-            .listByUserId(userId), threadPoolTaskExecutor);
+        Long tenantId = TenantContextHolder.getTenantId();
+        CompletableFuture<Set<String>> permissionFuture = CompletableFuture.supplyAsync(() -> {
+            Set<String> permissions = new HashSet<>();
+            TenantUtils.execute(tenantId, () -> {
+                permissions.addAll(roleService.listPermissionByUserId(userId));
+            });
+            return permissions;
+        }, threadPoolTaskExecutor);
+        CompletableFuture<Set<RoleContext>> roleFuture = CompletableFuture.supplyAsync(() -> {
+            Set<RoleContext> roles = new HashSet<>();
+            TenantUtils.execute(tenantId, () -> {
+                roles.addAll(roleService.listByUserId(userId));
+            });
+            return roles;
+        }, threadPoolTaskExecutor);
         CompletableFuture<Integer> passwordExpirationDaysFuture = CompletableFuture.supplyAsync(() -> optionService
-            .getValueByCode2Int(PASSWORD_EXPIRATION_DAYS.name()));
+            .getValueByCode2Int(PASSWORD_EXPIRATION_DAYS.name()), threadPoolTaskExecutor);
         CompletableFuture.allOf(permissionFuture, roleFuture, passwordExpirationDaysFuture);
         UserContext userContext = new UserContext(permissionFuture.join(), roleFuture
             .join(), passwordExpirationDaysFuture.join());
@@ -105,14 +122,27 @@ public abstract class AbstractLoginHandler<T extends LoginReq> implements LoginH
         loginParameter.setActiveTimeout(client.getActiveTimeout());
         loginParameter.setTimeout(client.getTimeout());
         loginParameter.setDeviceType(client.getClientType());
-        userContext.setClientType(client.getClientType());
         loginParameter.setExtra(CLIENT_ID, client.getClientId());
+        // 设置并发登录配置参数
+        loginParameter.setIsConcurrent(client.getIsConcurrent());
+        if (Boolean.FALSE.equals(client.getIsConcurrent())) {
+            loginParameter.setReplacedRange(SaReplacedRange.valueOf(client.getReplacedRange().getValue()));
+        }
+        loginParameter.setMaxLoginCount(client.getMaxLoginCount());
+        if (client.getMaxLoginCount() != -1) {
+            loginParameter.setOverflowLogoutMode(SaLogoutMode.valueOf(client.getOverflowLogoutMode().getValue()));
+        }
+        userContext.setClientType(client.getClientType());
         userContext.setClientId(client.getClientId());
+        userContext.setTenantId(tenantId);
         // 登录并缓存用户信息
         StpUtil.login(userContext.getId(), loginParameter.setExtraData(BeanUtil
             .beanToMap(new UserExtraContext(ServletUtils.getRequest()))));
         UserContextHolder.setContext(userContext);
-        return StpUtil.getTokenValue();
+        return LoginResp.builder()
+            .token(StpUtil.getTokenValue())
+            .tenantId(TenantContextHolder.isTenantEnabled() ? TenantContextHolder.getTenantId() : null)
+            .build();
     }
 
     /**

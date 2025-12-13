@@ -17,18 +17,13 @@
 package top.continew.admin.common.util;
 
 import cn.hutool.core.codec.Base64;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
-import cn.hutool.extra.spring.SpringUtil;
-import top.continew.admin.common.config.properties.RsaProperties;
-import top.continew.starter.core.exception.BusinessException;
-import top.continew.starter.core.validation.ValidationUtils;
-import top.continew.starter.security.crypto.autoconfigure.CryptoProperties;
-import top.continew.starter.security.crypto.encryptor.AesEncryptor;
-import top.continew.starter.security.crypto.encryptor.IEncryptor;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import top.continew.admin.common.config.RsaProperties;
+import top.continew.admin.common.constant.RegexConstants;
+import top.continew.starter.core.util.ExceptionUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 /**
  * 加密/解密工具类
@@ -88,20 +83,33 @@ public class SecureUtils {
     }
 
     /**
-     * 对普通加密字段列表进行AES加密，优化starter加密模块后优化这个方法
+     * 解密密码
      *
-     * @param values 待加密内容
-     * @return 加密后内容
+     * @param encryptedPasswordByRsaPublicKey 密码（已被 Rsa 公钥加密）
+     * @param errorMsg                        错误信息
+     * @return 解密后的密码
      */
-    public static List<String> encryptFieldByAes(List<String> values) {
-        IEncryptor encryptor = new AesEncryptor();
-        CryptoProperties properties = SpringUtil.getBean(CryptoProperties.class);
-        return values.stream().map(value -> {
-            try {
-                return encryptor.encrypt(value, properties.getPassword(), properties.getPublicKey());
-            } catch (Exception e) {
-                throw new BusinessException("字段加密异常");
-            }
-        }).collect(Collectors.toList());
+    public static String decryptPasswordByRsaPrivateKey(String encryptedPasswordByRsaPublicKey, String errorMsg) {
+        return decryptPasswordByRsaPrivateKey(encryptedPasswordByRsaPublicKey, errorMsg, false);
+    }
+
+    /**
+     * 解密密码
+     *
+     * @param encryptedPasswordByRsaPublicKey 密码（已被 Rsa 公钥加密）
+     * @param errorMsg                        错误信息
+     * @param isVerifyPattern                 是否验证密码格式
+     * @return 解密后的密码
+     */
+    public static String decryptPasswordByRsaPrivateKey(String encryptedPasswordByRsaPublicKey,
+                                                        String errorMsg,
+                                                        boolean isVerifyPattern) {
+        String rawPassword = ExceptionUtils.exToNull(() -> decryptByRsaPrivateKey(encryptedPasswordByRsaPublicKey));
+        ValidationUtils.throwIfBlank(rawPassword, errorMsg);
+        if (isVerifyPattern) {
+            ValidationUtils.throwIf(!ReUtil
+                .isMatch(RegexConstants.PASSWORD, rawPassword), "密码长度为 8-32 个字符，支持大小写字母、数字、特殊字符，至少包含字母和数字");
+        }
+        return rawPassword;
     }
 }

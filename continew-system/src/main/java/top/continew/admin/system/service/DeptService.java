@@ -16,14 +16,15 @@
 
 package top.continew.admin.system.service;
 
+import top.continew.admin.common.base.service.BaseService;
 import top.continew.admin.system.model.entity.DeptDO;
 import top.continew.admin.system.model.query.DeptQuery;
 import top.continew.admin.system.model.req.DeptReq;
 import top.continew.admin.system.model.resp.DeptResp;
-import top.continew.starter.data.mp.service.IService;
-import top.continew.starter.extension.crud.service.BaseService;
+import top.continew.starter.data.service.IService;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 部门业务接口
@@ -55,5 +56,5 @@ public interface DeptService extends BaseService<DeptResp, DeptResp, DeptQuery, 
      * @param deptNames 名称列表
      * @return 部门数量
      */
-    int countByNames(List<String> deptNames);
+    int countByNames(Set<String> deptNames);
 }

@@ -55,9 +55,9 @@ public class UserEmailUpdateReq implements Serializable {
     private String captcha;
 
     /**
-     * 当前密码（加密）
+     * 当前密码
      */
-    @Schema(description = "当前密码（加密）", example = "SYRLSszQGcMv4kP2Yolou9zf28B9GDakR9u91khxmR7V++i5A384kwnNZxqgvT6bjT4zqpIDuMFLWSt92hQJJA==")
+    @Schema(description = "当前密码", example = "RSA 公钥加密的当前密码")
     @NotBlank(message = "当前密码不能为空")
     private String oldPassword;
 }

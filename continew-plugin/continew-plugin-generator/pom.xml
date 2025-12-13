@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>top.continew</groupId>
+        <groupId>top.continew.admin</groupId>
         <artifactId>continew-plugin</artifactId>
         <version>${revision}</version>
     </parent>
@@ -14,12 +14,4 @@
 
     <name>${project.artifactId}</name>
     <description>代码生成器插件</description>
-
-    <dependencies>
-        <!-- 系统管理模块 -->
-        <dependency>
-            <groupId>top.continew</groupId>
-            <artifactId>continew-system</artifactId>
-        </dependency>
-    </dependencies>
 </project>

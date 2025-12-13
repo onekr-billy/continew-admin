@@ -16,15 +16,15 @@
 
 package top.continew.admin.system.service;
 
+import top.continew.admin.common.base.service.BaseService;
 import top.continew.admin.common.context.RoleContext;
 import top.continew.admin.system.model.entity.RoleDO;
 import top.continew.admin.system.model.query.RoleQuery;
 import top.continew.admin.system.model.req.RoleReq;
-import top.continew.admin.system.model.req.RoleUpdatePermissionReq;
+import top.continew.admin.system.model.req.RolePermissionUpdateReq;
 import top.continew.admin.system.model.resp.role.RoleDetailResp;
 import top.continew.admin.system.model.resp.role.RoleResp;
-import top.continew.starter.data.mp.service.IService;
-import top.continew.starter.extension.crud.service.BaseService;
+import top.continew.starter.data.service.IService;
 
 import java.util.List;
 import java.util.Set;
@@ -43,7 +43,7 @@ public interface RoleService extends BaseService<RoleResp, RoleDetailResp, RoleQ
      * @param id  角色 ID
      * @param req 请求参数
      */
-    void updatePermission(Long id, RoleUpdatePermissionReq req);
+    void updatePermission(Long id, RolePermissionUpdateReq req);
 
     /**
      * 分配角色给用户
@@ -52,6 +52,13 @@ public interface RoleService extends BaseService<RoleResp, RoleDetailResp, RoleQ
      * @param userIds 用户 ID 列表
      */
     void assignToUsers(Long id, List<Long> userIds);
+
+    /**
+     * 更新用户上下文
+     *
+     * @param roleId 角色 ID
+     */
+    void updateUserContext(Long roleId);
 
     /**
      * 根据用户 ID 查询权限码
@@ -78,12 +85,12 @@ public interface RoleService extends BaseService<RoleResp, RoleDetailResp, RoleQ
     Set<RoleContext> listByUserId(Long userId);
 
     /**
-     * 根据角色编码查询
+     * 根据编码查询 ID
      *
-     * @param code 角色编码
-     * @return 角色信息
+     * @param code 编码
+     * @return ID
      */
-    RoleDO getByCode(String code);
+    Long getIdByCode(String code);
 
     /**
      * 根据角色名称查询

@@ -44,12 +44,7 @@ public class GlobalSpringDocConfiguration {
         return GroupedOpenApi.builder()
             .group("common")
             .displayName("通用接口")
-            .pathsToMatch("/common/**", "/captcha/**", "/dashboard/**")
+            .pathsToMatch("/captcha/**", "/dashboard/**")
             .build();
-    }
-
-    @Bean
-    public GroupedOpenApi monitorApi() {
-        return GroupedOpenApi.builder().group("monitor").displayName("系统监控").pathsToMatch("/monitor/**").build();
     }
 }

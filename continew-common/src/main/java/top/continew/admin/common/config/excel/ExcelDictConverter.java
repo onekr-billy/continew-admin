@@ -19,12 +19,12 @@ package top.continew.admin.common.config.excel;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.extra.spring.SpringUtil;
-import com.alibaba.excel.converters.Converter;
-import com.alibaba.excel.metadata.GlobalConfiguration;
-import com.alibaba.excel.metadata.data.ReadCellData;
-import com.alibaba.excel.metadata.data.WriteCellData;
-import com.alibaba.excel.metadata.property.ExcelContentProperty;
-import top.continew.admin.common.service.CommonDictItemService;
+import cn.idev.excel.converters.Converter;
+import cn.idev.excel.metadata.GlobalConfiguration;
+import cn.idev.excel.metadata.data.ReadCellData;
+import cn.idev.excel.metadata.data.WriteCellData;
+import cn.idev.excel.metadata.property.ExcelContentProperty;
+import top.continew.admin.common.api.system.DictItemApi;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.extension.crud.model.resp.LabelValueResp;
 
@@ -86,7 +86,7 @@ public class ExcelDictConverter implements Converter<Object> {
         if (dictExcelProperty == null) {
             throw new IllegalArgumentException("Excel 字典转换器异常：请为字段添加 @DictExcelProperty 注解");
         }
-        CommonDictItemService dictItemService = SpringUtil.getBean(CommonDictItemService.class);
-        return dictItemService.listByDictCode(dictExcelProperty.value());
+        DictItemApi dictItemApi = SpringUtil.getBean(DictItemApi.class);
+        return dictItemApi.listByDictCode(dictExcelProperty.value());
     }
 }

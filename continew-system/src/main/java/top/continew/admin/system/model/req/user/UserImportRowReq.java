@@ -23,7 +23,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import top.continew.admin.common.constant.RegexConstants;
-import top.continew.starter.core.validation.constraints.Mobile;
+import top.continew.starter.validation.constraints.Mobile;
 import top.continew.starter.extension.crud.validation.CrudValidationGroup;
 
 import java.io.Serial;
@@ -33,7 +33,7 @@ import java.io.Serializable;
  * 用户导入行数据请求参数
  *
  * @author Kils
- * @since 2024-6-17 16:42
+ * @since 2024/6/17 16:42
  */
 @Data
 @Schema(description = "用户导入行数据请求参数")

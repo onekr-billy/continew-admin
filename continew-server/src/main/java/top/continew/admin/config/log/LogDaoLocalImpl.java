@@ -23,17 +23,18 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.URLUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.http.HttpStatus;
 import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.Async;
+import top.continew.admin.auth.constant.AuthConstants;
 import top.continew.admin.auth.enums.AuthTypeEnum;
 import top.continew.admin.auth.model.req.AccountLoginReq;
 import top.continew.admin.auth.model.req.EmailLoginReq;
 import top.continew.admin.auth.model.req.LoginReq;
 import top.continew.admin.auth.model.req.PhoneLoginReq;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.system.enums.LogStatusEnum;
 import top.continew.admin.system.mapper.LogMapper;
 import top.continew.admin.system.model.entity.LogDO;
@@ -41,6 +42,9 @@ import top.continew.admin.system.service.UserService;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.core.util.ExceptionUtils;
 import top.continew.starter.core.util.StrUtils;
+import top.continew.starter.extension.tenant.autoconfigure.TenantProperties;
+import top.continew.starter.extension.tenant.context.TenantContextHolder;
+import top.continew.starter.extension.tenant.util.TenantUtils;
 import top.continew.starter.log.dao.LogDao;
 import top.continew.starter.log.model.LogRecord;
 import top.continew.starter.log.model.LogRequest;
@@ -85,6 +89,16 @@ public class LogDaoLocalImpl implements LogDao {
         logDO.setCreateTime(LocalDateTime.ofInstant(logRecord.getTimestamp(), ZoneId.systemDefault()));
         // 设置操作人
         this.setCreateUser(logDO, logRequest, logResponse);
+        // 保存记录
+        if (TenantContextHolder.isTenantEnabled()) {
+            // 异步无法获取租户 ID
+            String tenantId = logRequest.getHeaders()
+                .get(SpringUtil.getBean(TenantProperties.class).getTenantIdHeader());
+            if (StrUtil.isNotBlank(tenantId)) {
+                TenantUtils.execute(Long.parseLong(tenantId), () -> logMapper.insert(logDO));
+                return;
+            }
+        }
         logMapper.insert(logDO);
     }
 
@@ -141,13 +155,13 @@ public class LogDaoLocalImpl implements LogDao {
         String requestUri = URLUtil.getPath(logDO.getRequestUrl());
         // 解析退出接口信息
         String responseBody = logResponse.getBody();
-        if (requestUri.startsWith(SysConstants.LOGOUT_URI) && StrUtil.isNotBlank(responseBody)) {
+        if (requestUri.startsWith(AuthConstants.LOGOUT_URI) && StrUtil.isNotBlank(responseBody)) {
             R result = JSONUtil.toBean(responseBody, R.class);
             logDO.setCreateUser(Convert.toLong(result.getData(), null));
             return;
         }
         // 解析登录接口信息
-        if (requestUri.startsWith(SysConstants.LOGIN_URI) && LogStatusEnum.SUCCESS.equals(logDO.getStatus())) {
+        if (requestUri.startsWith(AuthConstants.LOGIN_URI) && LogStatusEnum.SUCCESS.equals(logDO.getStatus())) {
             String requestBody = logRequest.getBody();
             logDO.setDescription(JSONUtil.toBean(requestBody, LoginReq.class).getAuthType().getDescription() + "登录");
             // 解析账号登录用户为操作人

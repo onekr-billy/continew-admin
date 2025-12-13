@@ -30,11 +30,9 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.validation.ValidationUtil;
 import cn.hutool.http.ContentType;
 import cn.hutool.json.JSONUtil;
-import com.alibaba.excel.EasyExcel;
+import cn.idev.excel.EasyExcel;
 import com.alicp.jetcache.anno.CacheInvalidate;
-import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.CacheUpdate;
-import com.alicp.jetcache.anno.Cached;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -55,20 +53,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import top.continew.admin.auth.service.OnlineUserService;
+import top.continew.admin.common.base.service.BaseServiceImpl;
 import top.continew.admin.common.constant.CacheConstants;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.context.UserContext;
 import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.enums.GenderEnum;
-import top.continew.admin.common.service.CommonUserService;
 import top.continew.admin.common.util.SecureUtils;
 import top.continew.admin.system.enums.OptionCategoryEnum;
 import top.continew.admin.system.mapper.user.UserMapper;
 import top.continew.admin.system.model.entity.DeptDO;
 import top.continew.admin.system.model.entity.RoleDO;
-import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.model.entity.UserRoleDO;
+import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.model.query.UserQuery;
 import top.continew.admin.system.model.req.user.*;
 import top.continew.admin.system.model.resp.user.UserDetailResp;
@@ -79,13 +76,13 @@ import top.continew.admin.system.service.*;
 import top.continew.starter.cache.redisson.util.RedisUtils;
 import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.core.exception.BusinessException;
-import top.continew.starter.core.util.SpringUtils;
-import top.continew.starter.core.validation.CheckUtils;
+import top.continew.starter.core.util.CollUtils;
+import top.continew.starter.core.util.FileUploadUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.encrypt.field.util.EncryptHelper;
 import top.continew.starter.extension.crud.model.query.PageQuery;
 import top.continew.starter.extension.crud.model.query.SortQuery;
 import top.continew.starter.extension.crud.model.resp.PageResp;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
-import top.continew.starter.core.util.FileUploadUtils;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -106,7 +103,7 @@ import static top.continew.admin.system.enums.PasswordPolicyEnum.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserResp, UserDetailResp, UserQuery, UserReq> implements UserService, CommonUserService {
+public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserResp, UserDetailResp, UserQuery, UserReq> implements UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserPasswordHistoryService userPasswordHistoryService;
@@ -138,13 +135,11 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
 
     @Override
     public void beforeCreate(UserReq req) {
-        final String errorMsgTemplate = "新增失败，[{}] 已存在";
-        String username = req.getUsername();
-        CheckUtils.throwIf(this.isNameExists(username, null), errorMsgTemplate, username);
-        String email = req.getEmail();
-        CheckUtils.throwIf(StrUtil.isNotBlank(email) && this.isEmailExists(email, null), errorMsgTemplate, email);
-        String phone = req.getPhone();
-        CheckUtils.throwIf(StrUtil.isNotBlank(phone) && this.isPhoneExists(phone, null), errorMsgTemplate, phone);
+        String password = SecureUtils.decryptPasswordByRsaPrivateKey(req.getPassword(), "密码解密失败", true);
+        req.setPassword(password);
+        this.checkUsernameRepeat(req.getUsername(), null);
+        this.checkEmailRepeat(req.getEmail(), null, "邮箱为 [{}] 的用户已存在");
+        this.checkPhoneRepeat(req.getPhone(), null, "手机号为 [{}] 的用户已存在");
     }
 
     @Override
@@ -159,13 +154,9 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
     @Transactional(rollbackFor = Exception.class)
     @CacheUpdate(key = "#id", value = "#req.nickname", name = CacheConstants.USER_KEY_PREFIX)
     public void update(UserReq req, Long id) {
-        final String errorMsgTemplate = "修改失败，[{}] 已存在";
-        String username = req.getUsername();
-        CheckUtils.throwIf(this.isNameExists(username, id), errorMsgTemplate, username);
-        String email = req.getEmail();
-        CheckUtils.throwIf(StrUtil.isNotBlank(email) && this.isEmailExists(email, id), errorMsgTemplate, email);
-        String phone = req.getPhone();
-        CheckUtils.throwIf(StrUtil.isNotBlank(phone) && this.isPhoneExists(phone, id), errorMsgTemplate, phone);
+        this.checkUsernameRepeat(req.getUsername(), id);
+        this.checkEmailRepeat(req.getEmail(), id, "邮箱为 [{}] 的用户已存在");
+        this.checkPhoneRepeat(req.getPhone(), id, "手机号为 [{}] 的用户已存在");
         DisEnableStatusEnum newStatus = req.getStatus();
         CheckUtils.throwIf(DisEnableStatusEnum.DISABLE.equals(newStatus) && ObjectUtil.equal(id, UserContextHolder
             .getUserId()), "不允许禁用当前用户");
@@ -203,7 +194,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             .select(UserDO::getId, UserDO::getNickname, UserDO::getIsSystem)
             .in(UserDO::getId, ids)
             .list();
-        List<Long> idList = list.stream().map(UserDO::getId).toList();
+        List<Long> idList = CollUtils.mapToList(list, UserDO::getId);
         Collection<Long> subtractIds = CollUtil.subtract(ids, idList);
         CheckUtils.throwIfNotEmpty(subtractIds, "所选用户 [{}] 不存在", CollUtil.join(subtractIds, StringConstants.COMMA));
         Optional<UserDO> isSystemData = list.stream().filter(UserDO::getIsSystem).findFirst();
@@ -219,12 +210,6 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
         super.delete(ids);
         // 踢出在线用户
         ids.forEach(onlineUserService::kickOut);
-    }
-
-    @Override
-    @Cached(key = "#id", name = CacheConstants.USER_KEY_PREFIX, cacheType = CacheType.BOTH, syncLocal = true)
-    public String getNicknameById(Long id) {
-        return baseMapper.selectNicknameById(id);
     }
 
     @Override
@@ -278,20 +263,20 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
         List<String> roleNames = validRowList.stream().map(UserImportRowReq::getRoleName).distinct().toList();
         int existRoleCount = roleService.countByNames(roleNames);
         CheckUtils.throwIf(existRoleCount < roleNames.size(), "存在无效角色，请检查数据");
-        // 校验是否存在无效部门
-        List<String> deptNames = validRowList.stream().map(UserImportRowReq::getDeptName).distinct().toList();
-        int existDeptCount = deptService.countByNames(deptNames);
-        CheckUtils.throwIf(existDeptCount < deptNames.size(), "存在无效部门，请检查数据");
+        // 校验是否存在无效部门（支持多级部门解析）
+        Set<String> deptNames = CollUtils.mapToSet(validRowList, UserImportRowReq::getDeptName);
+        int existDeptCount = countValidMultiLevelDepts(deptNames);
+        CheckUtils.throwIf(existDeptCount < deptNames.size(), "存在无效部门，请检查部门名称或部门层级是否正确");
 
         // 查询重复用户
         userImportResp
-            .setDuplicateUserRows(countExistByField(validRowList, UserImportRowReq::getUsername, UserDO::getUsername, false));
+            .setDuplicateUserRows(countExistByField(validRowList, UserImportRowReq::getUsername, UserDO::getUsername));
         // 查询重复邮箱
-        userImportResp
-            .setDuplicateEmailRows(countExistByField(validRowList, UserImportRowReq::getEmail, UserDO::getEmail, true));
+        userImportResp.setDuplicateEmailRows(countExistByField(validRowList, row -> EncryptHelper.encrypt(row
+            .getEmail()), UserDO::getEmail));
         // 查询重复手机
-        userImportResp
-            .setDuplicatePhoneRows(countExistByField(validRowList, UserImportRowReq::getPhone, UserDO::getPhone, true));
+        userImportResp.setDuplicatePhoneRows(countExistByField(validRowList, row -> EncryptHelper.encrypt(row
+            .getPhone()), UserDO::getPhone));
 
         // 设置导入会话并缓存数据，有效期10分钟
         String importKey = UUID.fastUUID().toString(true);
@@ -315,13 +300,13 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             throw new BusinessException("导入已过期，请重新上传");
         }
         // 已存在数据查询
-        List<String> existEmails = listExistByField(importUserList, UserImportRowReq::getEmail, UserDO::getEmail);
-        List<String> existPhones = listExistByField(importUserList, UserImportRowReq::getPhone, UserDO::getPhone);
-        List<UserDO> existUserList = listByUsernames(importUserList.stream()
-            .map(UserImportRowReq::getUsername)
-            .filter(Objects::nonNull)
-            .toList());
-        List<String> existUsernames = existUserList.stream().map(UserDO::getUsername).toList();
+        List<String> existEmails = listExistByField(importUserList, row -> EncryptHelper.encrypt(row
+            .getEmail()), UserDO::getEmail);
+        List<String> existPhones = listExistByField(importUserList, row -> EncryptHelper.encrypt(row
+            .getPhone()), UserDO::getPhone);
+        List<UserDO> existUserList = listByUsernames(CollUtils
+            .mapToList(importUserList, UserImportRowReq::getUsername));
+        List<String> existUsernames = CollUtils.mapToList(existUserList, UserDO::getUsername);
         CheckUtils
             .throwIf(isExitImportUser(req, importUserList, existUsernames, existEmails, existPhones), "数据不符合导入策略，已退出导入");
 
@@ -333,11 +318,11 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             .distinct()
             .toList());
         Map<String, Long> roleMap = roleList.stream().collect(Collectors.toMap(RoleDO::getName, RoleDO::getId));
-        List<DeptDO> deptList = deptService.listByNames(importUserList.stream()
+        // 获取多级部门映射
+        Map<String, Long> deptMap = buildMultiLevelDeptMapping(importUserList.stream()
             .map(UserImportRowReq::getDeptName)
             .distinct()
             .toList());
-        Map<String, Long> deptMap = deptList.stream().collect(Collectors.toMap(DeptDO::getName, DeptDO::getId));
 
         // 批量操作数据库集合
         List<UserDO> insertList = new ArrayList<>();
@@ -448,7 +433,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
     public void updatePhone(String newPhone, String oldPassword, Long id) {
         UserDO user = super.getById(id);
         CheckUtils.throwIf(!passwordEncoder.matches(oldPassword, user.getPassword()), "当前密码不正确");
-        CheckUtils.throwIf(this.isPhoneExists(newPhone, id), "手机号已绑定其他账号，请更换其他手机号");
+        this.checkPhoneRepeat(newPhone, id, "手机号已绑定其他账号，请更换其他手机号");
         CheckUtils.throwIfEqual(newPhone, user.getPhone(), "新手机号不能与当前手机号相同");
         // 更新手机号
         baseMapper.lambdaUpdate().set(UserDO::getPhone, newPhone).eq(UserDO::getId, id).update();
@@ -458,7 +443,7 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
     public void updateEmail(String newEmail, String oldPassword, Long id) {
         UserDO user = super.getById(id);
         CheckUtils.throwIf(!passwordEncoder.matches(oldPassword, user.getPassword()), "当前密码不正确");
-        CheckUtils.throwIf(this.isEmailExists(newEmail, id), "邮箱已绑定其他账号，请更换其他邮箱");
+        this.checkEmailRepeat(newEmail, id, "邮箱已绑定其他账号，请更换其他邮箱");
         CheckUtils.throwIfEqual(newEmail, user.getEmail(), "新邮箱不能与当前邮箱相同");
         // 更新邮箱
         baseMapper.lambdaUpdate().set(UserDO::getEmail, newEmail).eq(UserDO::getId, id).update();
@@ -519,16 +504,14 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             .eq(status != null, "t1.status", status)
             .between(CollUtil.isNotEmpty(createTimeList), "t1.create_time", CollUtil.getFirst(createTimeList), CollUtil
                 .getLast(createTimeList))
-            .and(deptId != null && !SysConstants.SUPER_DEPT_ID.equals(deptId), q -> {
-                List<Long> deptIdList = deptService.listChildren(deptId)
-                    .stream()
-                    .map(DeptDO::getId)
-                    .collect(Collectors.toList());
+            .and(deptId != null, q -> {
+                List<Long> deptIdList = CollUtils.mapToList(deptService.listChildren(deptId), DeptDO::getId);
                 deptIdList.add(deptId);
                 q.in("t1.dept_id", deptIdList);
             })
             .in(CollUtil.isNotEmpty(userIdList), "t1.id", userIdList)
-            .notIn(CollUtil.isNotEmpty(excludeUserIdList), "t1.id", excludeUserIdList);
+            .notIn(CollUtil.isNotEmpty(excludeUserIdList), "t1.id", excludeUserIdList)
+            .eq("t1.deleted", 0L);
     }
 
     /**
@@ -543,8 +526,8 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
             baseMapper.insert(insertList);
         }
         if (CollUtil.isNotEmpty(updateList)) {
-            SpringUtils.getProxy(this).updateBatchById(updateList);
-            userRoleService.deleteByUserIds(updateList.stream().map(UserDO::getId).toList());
+            baseMapper.updateBatchById(updateList);
+            userRoleService.deleteByUserIds(CollUtils.mapToList(updateList, UserDO::getId));
         }
         if (CollUtil.isNotEmpty(userRoleDOList)) {
             userRoleService.saveBatch(userRoleDOList);
@@ -602,14 +585,12 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
      */
     private int countExistByField(List<UserImportRowReq> userRowList,
                                   Function<UserImportRowReq, String> rowField,
-                                  SFunction<UserDO, ?> dbField,
-                                  boolean fieldEncrypt) {
-        List<String> fieldValues = userRowList.stream().map(rowField).filter(Objects::nonNull).toList();
+                                  SFunction<UserDO, ?> dbField) {
+        List<String> fieldValues = CollUtils.mapToList(userRowList, rowField);
         if (fieldValues.isEmpty()) {
             return 0;
         }
-        return (int)this.count(Wrappers.<UserDO>lambdaQuery()
-            .in(dbField, fieldEncrypt ? SecureUtils.encryptFieldByAes(fieldValues) : fieldValues));
+        return Math.toIntExact(baseMapper.lambdaQuery().in(dbField, fieldValues).count());
     }
 
     /**
@@ -623,14 +604,12 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
     private List<String> listExistByField(List<UserImportRowReq> userRowList,
                                           Function<UserImportRowReq, String> rowField,
                                           SFunction<UserDO, String> dbField) {
-        List<String> fieldValues = userRowList.stream().map(rowField).filter(Objects::nonNull).toList();
+        List<String> fieldValues = CollUtils.mapToList(userRowList, rowField);
         if (fieldValues.isEmpty()) {
             return Collections.emptyList();
         }
-        List<UserDO> userDOList = baseMapper.selectList(Wrappers.<UserDO>lambdaQuery()
-            .in(dbField, SecureUtils.encryptFieldByAes(fieldValues))
-            .select(dbField));
-        return userDOList.stream().map(dbField).filter(Objects::nonNull).toList();
+        List<UserDO> userList = baseMapper.lambdaQuery().select(dbField).in(dbField, fieldValues).list();
+        return CollUtils.mapToList(userList, dbField);
     }
 
     /**
@@ -675,38 +654,44 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
     }
 
     /**
-     * 名称是否存在
+     * 检查用户名是否重复
      *
-     * @param name 名称
-     * @param id   ID
-     * @return 是否存在
+     * @param username 用户名
+     * @param id       ID
      */
-    private boolean isNameExists(String name, Long id) {
-        return baseMapper.lambdaQuery().eq(UserDO::getUsername, name).ne(id != null, UserDO::getId, id).exists();
+    private void checkUsernameRepeat(String username, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
+            .eq(UserDO::getUsername, username)
+            .ne(id != null, UserDO::getId, id)
+            .exists(), "用户名为 [{}] 的用户已存在", username);
     }
 
     /**
-     * 邮箱是否存在
+     * 检查邮箱是否重复
      *
-     * @param email 邮箱
-     * @param id    ID
-     * @return 是否存在
+     * @param email    邮箱
+     * @param id       ID
+     * @param template 提示模板
      */
-    private boolean isEmailExists(String email, Long id) {
-        Long count = baseMapper.selectCountByEmail(email, id);
-        return count != null && count > 0;
+    private void checkEmailRepeat(String email, Long id, String template) {
+        CheckUtils.throwIf(StrUtil.isNotBlank(email) && baseMapper.lambdaQuery()
+            .eq(UserDO::getEmail, EncryptHelper.encrypt(email))
+            .ne(ObjectUtil.isNotNull(id), UserDO::getId, id)
+            .exists(), template, email);
     }
 
     /**
-     * 手机号码是否存在
+     * 检查手机号码是否重复
      *
-     * @param phone 手机号码
-     * @param id    ID
-     * @return 是否存在
+     * @param phone    手机号码
+     * @param id       ID
+     * @param template 提示模板
      */
-    private boolean isPhoneExists(String phone, Long id) {
-        Long count = baseMapper.selectCountByPhone(phone, id);
-        return count != null && count > 0;
+    private void checkPhoneRepeat(String phone, Long id, String template) {
+        CheckUtils.throwIf(StrUtil.isNotBlank(phone) && baseMapper.lambdaQuery()
+            .eq(UserDO::getPhone, EncryptHelper.encrypt(phone))
+            .ne(ObjectUtil.isNotNull(id), UserDO::getId, id)
+            .exists(), template, phone);
     }
 
     /**
@@ -745,5 +730,131 @@ public class UserServiceImpl extends BaseServiceImpl<UserMapper, UserDO, UserRes
         UserDO user = baseMapper.lambdaQuery().eq(UserDO::getId, id).one();
         CheckUtils.throwIfNull(user, "用户不存在");
         return user;
+    }
+
+    /**
+     * 统计有效的多级部门数量
+     * <p>
+     * 支持多级部门路径解析，使用冒号(:)作为层级分隔符
+     * 例如：公司A:研发部:前端组 或 研发部
+     * </p>
+     *
+     * @param deptNames 部门名称集合
+     * @return 有效部门数量
+     */
+    private int countValidMultiLevelDepts(Set<String> deptNames) {
+        CheckUtils.throwIfEmpty(deptNames, "部门名称集合不能为空");
+
+        int validCount = 0;
+        List<String> invalidDepts = new ArrayList<>();
+
+        for (String deptName : deptNames) {
+            try {
+                findDeptByHierarchicalPath(deptName);
+                validCount++;
+            } catch (Exception e) {
+                invalidDepts.add(deptName);
+            }
+        }
+
+        CheckUtils.throwIf(CollUtil.isNotEmpty(invalidDepts), "以下部门无效或存在歧义：{}", String.join(", ", invalidDepts));
+
+        return validCount;
+    }
+
+    /**
+     * 构建多级部门映射关系
+     * <p>
+     * 将部门名称列表转换为部门名称到ID的映射，支持多级部门路径解析
+     * </p>
+     *
+     * @param deptNames 部门名称列表
+     * @return 部门名称到ID的映射
+     */
+    private Map<String, Long> buildMultiLevelDeptMapping(List<String> deptNames) {
+        CheckUtils.throwIfEmpty(deptNames, "部门名称列表不能为空");
+
+        Map<String, Long> deptMap = new HashMap<>();
+        for (String deptName : deptNames) {
+            DeptDO dept = findDeptByHierarchicalPath(deptName);
+            CheckUtils.throwIfNull(dept, "部门 [{}] 不存在或存在歧义", deptName);
+            deptMap.put(deptName, dept.getId());
+        }
+        return deptMap;
+    }
+
+    /**
+     * 根据层级路径查找部门
+     * <p>
+     * 支持两种格式：
+     * <ul>
+     * <li>多级部门：公司A/研发部/前端组</li>
+     * <li>单级部门：研发部</li>
+     * </ul>
+     * 使用左斜杠/作为层级分隔符，会逐级查找对应的部门
+     * </p>
+     *
+     * @param deptPath 部门路径
+     * @return 部门信息，未找到时返回null
+     */
+    private DeptDO findDeptByHierarchicalPath(String deptPath) {
+        CheckUtils.throwIfBlank(deptPath, "部门路径不能为空");
+        return deptPath.contains(StringConstants.SLASH)
+            ? findMultiLevelDept(deptPath)
+            : findSingleLevelDept(deptPath.trim());
+    }
+
+    /**
+     * 查找多级部门
+     * <p>
+     * 从根部门开始逐级查找，确保部门层级关系正确
+     * </p>
+     *
+     * @param deptPath 多级部门路径
+     * @return 部门信息，未找到时返回null
+     */
+    private DeptDO findMultiLevelDept(String deptPath) {
+        String[] pathParts = deptPath.split(StringConstants.SLASH);
+        CheckUtils.throwIf(pathParts.length == 0, "部门路径格式错误：{}", deptPath);
+
+        // 从根部门开始逐级查找
+        DeptDO currentDept = null;
+        Long parentId = 0L; // 根部门的parentId为null
+
+        for (String part : pathParts) {
+            String trimmedPart = part.trim();
+            CheckUtils.throwIfBlank(trimmedPart, "部门路径包含空名称：{}", deptPath);
+
+            // 查找当前层级下指定名称的部门
+            currentDept = deptService.lambdaQuery()
+                .eq(DeptDO::getName, trimmedPart)
+                .eq(DeptDO::getParentId, parentId)
+                .one();
+
+            CheckUtils.throwIfNull(currentDept, "找不到部门 [{}] 在路径 [{}] 中", trimmedPart, deptPath);
+            parentId = currentDept.getId(); // 更新父级ID为当前部门ID
+        }
+
+        return currentDept;
+    }
+
+    /**
+     * 查找单级部门
+     * <p>
+     * 当只提供部门名称时，检查是否存在多个同名部门
+     * 如果存在多个同名部门，则要求用户提供完整的层级路径
+     * </p>
+     *
+     * @param deptName 部门名称
+     * @return 部门信息，未找到或存在歧义时返回null
+     */
+    private DeptDO findSingleLevelDept(String deptName) {
+        // 查找所有同名部门
+        List<DeptDO> deptList = deptService.lambdaQuery().eq(DeptDO::getName, deptName).list();
+
+        CheckUtils.throwIfEmpty(deptList, "部门 [{}] 不存在", deptName);
+        CheckUtils.throwIf(deptList.size() > 1, "存在多个同名部门 [{}]，请使用完整层级路径，如：公司名:{}", deptName, deptName);
+
+        return deptList.get(0);
     }
 }

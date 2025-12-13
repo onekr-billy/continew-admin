@@ -32,8 +32,8 @@ import top.continew.admin.schedule.model.resp.JobResp;
 import top.continew.admin.schedule.service.JobService;
 import top.continew.starter.extension.crud.model.resp.PageResp;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 任务业务实现
@@ -75,7 +75,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public boolean delete(Long id) {
-        return Boolean.TRUE.equals(jobClient.request(() -> jobApi.delete(Collections.singleton(id))));
+        return SnailJobOpenApi.deleteJob(Set.of(id)).execute();
     }
 
     @Override

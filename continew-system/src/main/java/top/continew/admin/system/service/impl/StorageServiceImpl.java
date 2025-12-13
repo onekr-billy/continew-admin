@@ -28,6 +28,7 @@ import org.dromara.x.file.storage.core.FileStorageServiceBuilder;
 import org.dromara.x.file.storage.core.platform.FileStorage;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.continew.admin.common.base.service.BaseServiceImpl;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.model.req.CommonStatusUpdateReq;
 import top.continew.admin.common.util.SecureUtils;
@@ -39,12 +40,10 @@ import top.continew.admin.system.model.req.StorageReq;
 import top.continew.admin.system.model.resp.StorageResp;
 import top.continew.admin.system.service.FileService;
 import top.continew.admin.system.service.StorageService;
-import top.continew.starter.core.constant.StringConstants;
 import top.continew.starter.core.util.ExceptionUtils;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.core.validation.ValidationUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
 import top.continew.starter.core.util.SpringWebUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +67,7 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
     public void beforeCreate(StorageReq req) {
         // 解密密钥
         if (StorageTypeEnum.OSS.equals(req.getType())) {
+            ValidationUtils.throwIfBlank(req.getSecretKey(), "Secret Key不能为空");
             req.setSecretKey(this.decryptSecretKey(req.getSecretKey(), null));
         }
         // 指定配置参数校验及预处理
@@ -75,8 +75,7 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
         storageType.validate(req);
         storageType.pretreatment(req);
         // 校验存储编码
-        String code = req.getCode();
-        CheckUtils.throwIf(this.isCodeExists(code, null), "新增失败，[{}] 已存在", code);
+        this.checkCodeRepeat(req.getCode(), null);
         // 需要独立操作来指定默认存储
         req.setIsDefault(false);
         // 加载存储引擎
@@ -92,9 +91,11 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
         if (StorageTypeEnum.OSS.equals(req.getType())) {
             req.setSecretKey(this.decryptSecretKey(req.getSecretKey(), oldStorage));
         }
-        // 校验存储编码、存储类型、状态
+        // 校验存储类型、存储编码、回收站配置、状态
         CheckUtils.throwIfNotEqual(req.getType(), oldStorage.getType(), "不允许修改存储类型");
         CheckUtils.throwIfNotEqual(req.getCode(), oldStorage.getCode(), "不允许修改存储编码");
+        CheckUtils.throwIfNotEqual(req.getRecycleBinEnabled(), oldStorage.getRecycleBinEnabled(), "不允许修改回收站配置");
+        CheckUtils.throwIfNotEqual(req.getRecycleBinPath(), oldStorage.getRecycleBinPath(), "不允许修改回收站配置");
         DisEnableStatusEnum newStatus = req.getStatus();
         CheckUtils.throwIf(Boolean.TRUE.equals(oldStorage.getIsDefault()) && DisEnableStatusEnum.DISABLE
             .equals(newStatus), "[{}] 是默认存储，不允许禁用", oldStorage.getName());
@@ -155,7 +156,7 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
             return;
         }
         // 启用状态才能设为默认存储
-        CheckUtils.throwIfNotEqual(DisEnableStatusEnum.ENABLE, storage.getStatus(), "请先启用所选存储");
+        CheckUtils.throwIfEqual(DisEnableStatusEnum.DISABLE, storage.getStatus(), "请先启用所选存储");
         baseMapper.lambdaUpdate().eq(StorageDO::getIsDefault, true).set(StorageDO::getIsDefault, false).update();
         baseMapper.lambdaUpdate().eq(StorageDO::getId, id).set(StorageDO::getIsDefault, true).update();
     }
@@ -225,19 +226,15 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
      * 解密 SecretKey
      *
      * @param encryptSecretKey 加密的 SecretKey
-     * @param storage          存储信息
+     * @param oldStorage       旧存储配置
      * @return 解密后的 SecretKey
      */
-    private String decryptSecretKey(String encryptSecretKey, StorageDO storage) {
-        // 修改时，如果 SecretKey 不修改，需要手动修正
-        if (storage != null) {
-            boolean isSecretKeyNotUpdate = StrUtil.isBlank(encryptSecretKey) || encryptSecretKey
-                .contains(StringConstants.ASTERISK);
-            if (isSecretKeyNotUpdate) {
-                return storage.getSecretKey();
-            }
+    private String decryptSecretKey(String encryptSecretKey, StorageDO oldStorage) {
+        // 修改时，SecretKey 为空将不更改
+        if (oldStorage != null && StrUtil.isBlank(encryptSecretKey)) {
+            return oldStorage.getSecretKey();
         }
-        // 新增场景，直接解密 SecretKey
+        // 解密
         String secretKey = ExceptionUtils.exToNull(() -> SecureUtils.decryptByRsaPrivateKey(encryptSecretKey));
         ValidationUtils.throwIfNull(secretKey, "私有密钥解密失败");
         ValidationUtils.throwIf(secretKey.length() > 255, "私有密钥长度不能超过 255 个字符");
@@ -245,13 +242,15 @@ public class StorageServiceImpl extends BaseServiceImpl<StorageMapper, StorageDO
     }
 
     /**
-     * 编码是否存在
+     * 检查编码是否重复
      *
      * @param code 编码
      * @param id   ID
-     * @return 是否存在
      */
-    private boolean isCodeExists(String code, Long id) {
-        return baseMapper.lambdaQuery().eq(StorageDO::getCode, code).ne(id != null, StorageDO::getId, id).exists();
+    private void checkCodeRepeat(String code, Long id) {
+        CheckUtils.throwIf(baseMapper.lambdaQuery()
+            .eq(StorageDO::getCode, code)
+            .ne(id != null, StorageDO::getId, id)
+            .exists(), "编码为 [{}] 的存储配置已存在", code);
     }
 }

@@ -28,8 +28,12 @@ import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
 import org.dromara.x.file.storage.core.ProgressListener;
 import org.dromara.x.file.storage.core.upload.UploadPretreatment;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import top.continew.admin.common.base.service.BaseServiceImpl;
+import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.system.enums.FileTypeEnum;
 import top.continew.admin.system.mapper.FileMapper;
@@ -41,15 +45,17 @@ import top.continew.admin.system.model.resp.file.FileResp;
 import top.continew.admin.system.model.resp.file.FileStatisticsResp;
 import top.continew.admin.system.service.FileService;
 import top.continew.admin.system.service.StorageService;
+import top.continew.starter.cache.redisson.util.RedisLockUtils;
 import top.continew.starter.core.constant.StringConstants;
+import top.continew.starter.core.util.CollUtils;
 import top.continew.starter.core.util.StrUtils;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.core.validation.ValidationUtils;
-import top.continew.starter.extension.crud.service.BaseServiceImpl;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -64,28 +70,36 @@ import java.util.stream.Collectors;
 public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileResp, FileResp, FileQuery, FileReq> implements FileService {
 
     private final FileStorageService fileStorageService;
+    @Lazy
     @Resource
     private StorageService storageService;
 
     @Override
-    public void beforeDelete(List<Long> ids) {
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(List<Long> ids) {
         List<FileDO> fileList = baseMapper.lambdaQuery().in(FileDO::getId, ids).list();
+        if (CollUtil.isEmpty(fileList)) {
+            return;
+        }
+        // 批量获取存储配置
         Map<Long, List<FileDO>> fileListGroup = fileList.stream().collect(Collectors.groupingBy(FileDO::getStorageId));
+        List<StorageDO> storageList = storageService.listByIds(fileListGroup.keySet());
+        Map<Long, StorageDO> storageGroup = storageList.stream()
+            .collect(Collectors.toMap(StorageDO::getId, Function.identity(), (existing, replacement) -> existing));
+        // 删除记录
         for (Map.Entry<Long, List<FileDO>> entry : fileListGroup.entrySet()) {
-            StorageDO storage = storageService.getById(entry.getKey());
-            for (FileDO file : entry.getValue()) {
-                if (!FileTypeEnum.DIR.equals(file.getType())) {
-                    FileInfo fileInfo = file.toFileInfo(storage);
-                    fileStorageService.delete(fileInfo);
-                } else {
-                    // 不允许删除非空文件夹
-                    boolean exists = baseMapper.lambdaQuery()
-                        .eq(FileDO::getParentPath, file.getPath())
-                        .eq(FileDO::getStorageId, entry.getKey())
-                        .exists();
-                    CheckUtils.throwIf(exists, "文件夹 [{}] 不为空，请先删除文件夹下的内容", file.getName());
-                }
+            StorageDO storage = storageGroup.get(entry.getKey());
+            List<Long> idList = CollUtils.mapToList(entry.getValue(), FileDO::getId);
+            if (Boolean.TRUE.equals(storage.getRecycleBinEnabled())) {
+                baseMapper.deleteByIds(idList);
+            } else {
+                baseMapper.deleteWithoutRecycleBin(idList, UserContextHolder.getUserId());
             }
+        }
+        // 删除实际文件
+        for (Map.Entry<Long, List<FileDO>> entry : fileListGroup.entrySet()) {
+            StorageDO storage = storageGroup.get(entry.getKey());
+            entry.getValue().forEach(file -> this.deleteFile(file, storage));
         }
     }
 
@@ -250,10 +264,9 @@ public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileRes
      * 处理路径
      *
      * <p>
-     * 1.如果 path 为空，则使用 {@link FileService#getDefaultParentPath()} 作为默认值 <br />
-     * 2.如果 path 为 {@code /}，则设置为空 <br />
-     * 3.如果 path 不以 {@code /} 结尾，则添加后缀 {@code /} <br />
-     * 4.如果 path 以 {@code /} 开头，则移除前缀 {@code /} <br />
+     * 1.如果 path 为 {@code /}，则设置为空 <br />
+     * 2.如果 path 不以 {@code /} 结尾，则添加后缀 {@code /} <br />
+     * 3.如果 path 以 {@code /} 开头，则移除前缀 {@code /} <br />
      * 示例：yyyy/MM/dd/
      * </p>
      *
@@ -261,9 +274,6 @@ public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileRes
      * @return 处理路径
      */
     private String pretreatmentPath(String path) {
-        if (StrUtil.isBlank(path)) {
-            return this.getDefaultParentPath();
-        }
         if (StringConstants.SLASH.equals(path)) {
             return StringConstants.EMPTY;
         }
@@ -280,39 +290,75 @@ public class FileServiceImpl extends BaseServiceImpl<FileMapper, FileDO, FileRes
      * @param parentPath 上级目录
      * @param storage    存储配置
      */
-    private void createParentDir(String parentPath, StorageDO storage) {
-        if (StrUtil.isBlank(parentPath) || StringConstants.SLASH.equals(parentPath)) {
+    @Override
+    public void createParentDir(String parentPath, StorageDO storage) {
+        String lockKey = StrUtil.format("Lock:{}:{}", storage.getCode(), parentPath);
+        try (RedisLockUtils lock = RedisLockUtils.tryLock(lockKey)) {
+            if (!lock.isLocked()) {
+                return; // 获取锁失败，直接返回
+            }
+            if (StrUtil.isBlank(parentPath) || StringConstants.SLASH.equals(parentPath)) {
+                return;
+            }
+            // user/avatar/ => user、avatar
+            String[] parentPathParts = StrUtil.split(parentPath, StringConstants.SLASH, false, true)
+                .toArray(String[]::new);
+            String lastPath = StringConstants.SLASH;
+            StringBuilder currentPathBuilder = new StringBuilder();
+            for (int i = 0; i < parentPathParts.length; i++) {
+                String parentPathPart = parentPathParts[i];
+                if (i > 0) {
+                    lastPath = currentPathBuilder.toString();
+                }
+                // /user、/user/avatar
+                currentPathBuilder.append(StringConstants.SLASH).append(parentPathPart);
+                String currentPath = currentPathBuilder.toString();
+                // 文件夹和文件存储引擎需要一致
+                FileDO dirFile = baseMapper.lambdaQuery()
+                    .eq(FileDO::getPath, currentPath)
+                    .eq(FileDO::getType, FileTypeEnum.DIR)
+                    .one();
+                if (dirFile != null) {
+                    CheckUtils.throwIfNotEqual(dirFile.getStorageId(), storage.getId(), "文件夹和上传文件存储引擎不一致");
+                    continue;
+                }
+                FileDO file = new FileDO();
+                file.setName(parentPathPart);
+                file.setOriginalName(parentPathPart);
+                file.setPath(currentPath);
+                file.setParentPath(lastPath);
+                file.setType(FileTypeEnum.DIR);
+                file.setStorageId(storage.getId());
+                baseMapper.insert(file);
+            }
+        }
+    }
+
+    /**
+     * 删除实际文件
+     *
+     * @param file    文件
+     * @param storage 存储配置
+     */
+    private void deleteFile(FileDO file, StorageDO storage) {
+        Long storageId = storage.getId();
+        if (FileTypeEnum.DIR.equals(file.getType())) {
+            // 不允许删除非空文件夹
+            boolean exists = baseMapper.lambdaQuery()
+                .eq(FileDO::getParentPath, file.getPath())
+                .eq(FileDO::getStorageId, storageId)
+                .exists();
+            CheckUtils.throwIf(exists, "文件夹 [{}] 不为空，请先删除文件夹下的内容", file.getName());
             return;
         }
-        // user/avatar/ => user、avatar
-        String[] parentPathParts = StrUtil.split(parentPath, StringConstants.SLASH, false, true).toArray(String[]::new);
-        String lastPath = StringConstants.SLASH;
-        StringBuilder currentPathBuilder = new StringBuilder();
-        for (int i = 0; i < parentPathParts.length; i++) {
-            String parentPathPart = parentPathParts[i];
-            if (i > 0) {
-                lastPath = currentPathBuilder.toString();
-            }
-            // /user、/user/avatar
-            currentPathBuilder.append(StringConstants.SLASH).append(parentPathPart);
-            String currentPath = currentPathBuilder.toString();
-            // 文件夹和文件存储引擎需要一致
-            FileDO dirFile = baseMapper.lambdaQuery()
-                .eq(FileDO::getPath, currentPath)
-                .eq(FileDO::getType, FileTypeEnum.DIR)
-                .one();
-            if (dirFile != null) {
-                CheckUtils.throwIfNotEqual(dirFile.getStorageId(), storage.getId(), "文件夹和上传文件存储引擎不一致");
-                continue;
-            }
-            FileDO file = new FileDO();
-            file.setName(parentPathPart);
-            file.setOriginalName(parentPathPart);
-            file.setPath(currentPath);
-            file.setParentPath(lastPath);
-            file.setType(FileTypeEnum.DIR);
-            file.setStorageId(storage.getId());
-            baseMapper.insert(file);
+        FileInfo fileInfo = file.toFileInfo(storage);
+        if (Boolean.TRUE.equals(storage.getRecycleBinEnabled())) {
+            // 移动到回收站目录
+            fileInfo.setId(file.getId().toString());
+            fileStorageService.move(fileInfo).setPath(storage.getRecycleBinPath() + fileInfo.getPath()).move();
+        } else {
+            // 删除文件
+            fileStorageService.delete(fileInfo);
         }
     }
 }

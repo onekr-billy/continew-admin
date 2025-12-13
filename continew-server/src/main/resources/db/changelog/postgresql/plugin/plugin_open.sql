@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset chengzi:1
--- comment 初始化能力开放插件
+-- comment 初始化能力开放插件数据表
 -- 初始化表结构
 CREATE TABLE IF NOT EXISTS "sys_app" (
     "id"          int8         NOT NULL,
@@ -15,23 +15,26 @@ CREATE TABLE IF NOT EXISTS "sys_app" (
     "create_time" timestamp    NOT NULL,
     "update_user" int8         DEFAULT NULL,
     "update_time" timestamp    DEFAULT NULL,
+    "deleted"     int8         NOT NULL DEFAULT 0,
     PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "uk_app_access_key" ON "sys_app" ("access_key");
-CREATE INDEX "idx_app_create_user" ON "sys_app" ("create_user");
-CREATE INDEX "idx_app_update_user" ON "sys_app" ("update_user");
-COMMENT ON COLUMN "sys_app"."id"              IS 'ID';
-COMMENT ON COLUMN "sys_app"."name"            IS '名称';
-COMMENT ON COLUMN "sys_app"."access_key"      IS 'Access Key（访问密钥）';
-COMMENT ON COLUMN "sys_app"."secret_key"      IS 'Secret Key（私有密钥）';
-COMMENT ON COLUMN "sys_app"."expire_time"     IS '失效时间';
-COMMENT ON COLUMN "sys_app"."description"     IS '描述';
-COMMENT ON COLUMN "sys_app"."status"          IS '状态（1：启用；2：禁用）';
-COMMENT ON COLUMN "sys_app"."create_user"     IS '创建人';
-COMMENT ON COLUMN "sys_app"."create_time"     IS '创建时间';
-COMMENT ON COLUMN "sys_app"."update_user"     IS '修改人';
-COMMENT ON COLUMN "sys_app"."update_time"     IS '修改时间';
-COMMENT ON TABLE  "sys_app"                   IS '应用表';
+CREATE UNIQUE INDEX "uk_app_access_key" ON "sys_app" ("access_key", "deleted");
+CREATE INDEX "idx_app_create_user"      ON "sys_app" ("create_user");
+CREATE INDEX "idx_app_update_user"      ON "sys_app" ("update_user");
+CREATE INDEX "idx_app_deleted"          ON "sys_app" ("deleted");
+COMMENT ON COLUMN "sys_app"."id"          IS 'ID';
+COMMENT ON COLUMN "sys_app"."name"        IS '名称';
+COMMENT ON COLUMN "sys_app"."access_key"  IS 'Access Key（访问密钥）';
+COMMENT ON COLUMN "sys_app"."secret_key"  IS 'Secret Key（私有密钥）';
+COMMENT ON COLUMN "sys_app"."expire_time" IS '失效时间';
+COMMENT ON COLUMN "sys_app"."description" IS '描述';
+COMMENT ON COLUMN "sys_app"."status"      IS '状态（1：启用；2：禁用）';
+COMMENT ON COLUMN "sys_app"."create_user" IS '创建人';
+COMMENT ON COLUMN "sys_app"."create_time" IS '创建时间';
+COMMENT ON COLUMN "sys_app"."update_user" IS '修改人';
+COMMENT ON COLUMN "sys_app"."update_time" IS '修改时间';
+COMMENT ON COLUMN "sys_app"."deleted"     IS '是否已删除（0：否；id：是）';
+COMMENT ON TABLE  "sys_app"               IS '应用表';
 
 -- 初始化默认菜单
 INSERT INTO "sys_menu"

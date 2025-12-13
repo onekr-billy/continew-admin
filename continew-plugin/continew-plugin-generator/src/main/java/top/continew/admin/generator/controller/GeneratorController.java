@@ -22,16 +22,16 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import top.continew.admin.common.api.system.DictApi;
 import top.continew.admin.generator.model.entity.FieldConfigDO;
 import top.continew.admin.generator.model.entity.GenConfigDO;
 import top.continew.admin.generator.model.query.GenConfigQuery;
 import top.continew.admin.generator.model.req.GenConfigReq;
 import top.continew.admin.generator.model.resp.GeneratePreviewResp;
 import top.continew.admin.generator.service.GeneratorService;
-import top.continew.admin.system.service.DictService;
 import top.continew.starter.extension.crud.model.query.PageQuery;
 import top.continew.starter.extension.crud.model.resp.LabelValueResp;
 import top.continew.starter.extension.crud.model.resp.PageResp;
@@ -46,19 +46,18 @@ import java.util.List;
  * @since 2023/8/3 22:58
  */
 @Tag(name = "代码生成 API")
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/code/generator")
 public class GeneratorController {
 
     private final GeneratorService baseService;
-    private final DictService dictService;
+    private final DictApi dictApi;
 
     @Operation(summary = "分页查询生成配置", description = "分页查询生成配置列表")
     @SaCheckPermission("code:generator:list")
     @GetMapping("/config")
-    public PageResp<GenConfigDO> pageGenConfig(GenConfigQuery query, @Validated PageQuery pageQuery) {
+    public PageResp<GenConfigDO> pageGenConfig(@Valid GenConfigQuery query, @Valid PageQuery pageQuery) {
         return baseService.pageGenConfig(query, pageQuery);
     }
 
@@ -84,7 +83,7 @@ public class GeneratorController {
     @Parameter(name = "tableName", description = "表名称", required = true, example = "sys_user", in = ParameterIn.PATH)
     @SaCheckPermission("code:generator:config")
     @PostMapping("/config/{tableName}")
-    public void saveConfig(@Validated @RequestBody GenConfigReq req, @PathVariable String tableName) {
+    public void saveConfig(@RequestBody @Valid GenConfigReq req, @PathVariable String tableName) {
         baseService.saveConfig(req, tableName);
     }
 
@@ -112,12 +111,10 @@ public class GeneratorController {
         baseService.generateCode(tableNames);
     }
 
-    @Operation(summary = "查询字典", description = "查询字典列表")
+    @Operation(summary = "查询字典", description = "查询字典列表（包含枚举字典）")
     @SaCheckPermission("code:generator:config")
     @GetMapping("/dict")
     public List<LabelValueResp> listDict() {
-        List<LabelValueResp> dictList = dictService.listDict(null, null);
-        dictList.addAll(dictService.listEnumDict());
-        return dictList;
+        return dictApi.listAll();
     }
 }

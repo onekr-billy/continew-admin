@@ -16,12 +16,12 @@
 
 package top.continew.admin.system.service;
 
+import top.continew.admin.common.base.service.BaseService;
 import top.continew.admin.system.model.entity.MenuDO;
 import top.continew.admin.system.model.query.MenuQuery;
 import top.continew.admin.system.model.req.MenuReq;
 import top.continew.admin.system.model.resp.MenuResp;
-import top.continew.starter.data.mp.service.IService;
-import top.continew.starter.extension.crud.service.BaseService;
+import top.continew.starter.data.service.IService;
 
 import java.util.List;
 import java.util.Set;
@@ -49,4 +49,11 @@ public interface MenuService extends BaseService<MenuResp, MenuResp, MenuQuery, 
      * @return 菜单列表
      */
     List<MenuResp> listByRoleId(Long roleId);
+
+    /**
+     * 查询租户排除的菜单 ID 列表
+     *
+     * @return 租户排除的菜单 ID 列表
+     */
+    List<Long> listExcludeTenantMenu();
 }

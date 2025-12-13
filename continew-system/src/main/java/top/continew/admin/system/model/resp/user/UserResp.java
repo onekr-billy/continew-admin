@@ -22,7 +22,7 @@ import cn.crane4j.core.executor.handler.ManyToManyAssembleOperationHandler;
 import cn.crane4j.core.executor.handler.OneToManyAssembleOperationHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import top.continew.admin.common.model.resp.BaseDetailResp;
+import top.continew.admin.common.base.model.resp.BaseDetailResp;
 import top.continew.admin.common.constant.ContainerConstants;
 import top.continew.admin.common.context.UserContextHolder;
 import top.continew.admin.common.enums.DisEnableStatusEnum;

@@ -23,6 +23,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.xkcoding.justauth.autoconfigure.JustAuthProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,26 +34,29 @@ import me.zhyd.oauth.model.AuthResponse;
 import me.zhyd.oauth.model.AuthUser;
 import me.zhyd.oauth.request.AuthRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import top.continew.admin.auth.AbstractLoginHandler;
 import top.continew.admin.auth.enums.AuthTypeEnum;
 import top.continew.admin.auth.model.req.SocialLoginReq;
 import top.continew.admin.auth.model.resp.LoginResp;
 import top.continew.admin.common.constant.RegexConstants;
-import top.continew.admin.common.constant.SysConstants;
 import top.continew.admin.common.enums.DisEnableStatusEnum;
 import top.continew.admin.common.enums.GenderEnum;
+import top.continew.admin.common.enums.RoleCodeEnum;
 import top.continew.admin.system.enums.MessageTemplateEnum;
 import top.continew.admin.system.enums.MessageTypeEnum;
+import top.continew.admin.system.model.entity.DeptDO;
 import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.model.entity.user.UserSocialDO;
 import top.continew.admin.system.model.req.MessageReq;
 import top.continew.admin.system.model.resp.ClientResp;
+import top.continew.admin.system.service.DeptService;
 import top.continew.admin.system.service.MessageService;
 import top.continew.admin.system.service.UserRoleService;
 import top.continew.admin.system.service.UserSocialService;
-import top.continew.starter.core.autoconfigure.project.ProjectProperties;
+import top.continew.starter.core.autoconfigure.application.ApplicationProperties;
 import top.continew.starter.core.exception.BadRequestException;
-import top.continew.starter.core.validation.ValidationUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -72,9 +76,11 @@ public class SocialLoginHandler extends AbstractLoginHandler<SocialLoginReq> {
     private final UserSocialService userSocialService;
     private final UserRoleService userRoleService;
     private final MessageService messageService;
-    private final ProjectProperties projectProperties;
+    private final ApplicationProperties applicationProperties;
+    private final DeptService deptService;
 
     @Override
+    @Transactional
     public LoginResp login(SocialLoginReq req, ClientResp client, HttpServletRequest request) {
         // 获取第三方登录信息
         AuthRequest authRequest = this.getAuthRequest(req.getSource());
@@ -107,11 +113,16 @@ public class SocialLoginHandler extends AbstractLoginHandler<SocialLoginReq> {
                 user.setGender(GenderEnum.valueOf(authUser.getGender().name()));
             }
             user.setAvatar(authUser.getAvatar());
-            user.setDeptId(SysConstants.SUPER_DEPT_ID);
+            // 默认设置为系统内置数据的根部门 如果需要设置其他部门自行替换查询条件
+            DeptDO deptDO = deptService.getOne(new LambdaQueryWrapper<DeptDO>().eq(DeptDO::getIsSystem, true)
+                .eq(DeptDO::getParentId, 0));
+            ValidationUtils.throwIf(deptDO == null, "未查询到系统内置部门");
+            user.setDeptId(deptDO.getId());
             user.setStatus(DisEnableStatusEnum.ENABLE);
             userService.save(user);
             Long userId = user.getId();
-            userRoleService.assignRolesToUser(Collections.singletonList(SysConstants.GENERAL_ROLE_ID), userId);
+            userRoleService.assignRolesToUser(Collections.singletonList(roleService
+                .getIdByCode(RoleCodeEnum.GENERAL_USER.getCode())), userId);
             userSocial = new UserSocialDO();
             userSocial.setUserId(userId);
             userSocial.setSource(source);
@@ -126,8 +137,7 @@ public class SocialLoginHandler extends AbstractLoginHandler<SocialLoginReq> {
         userSocial.setLastLoginTime(LocalDateTime.now());
         userSocialService.saveOrUpdate(userSocial);
         // 执行认证
-        String token = super.authenticate(user, client);
-        return LoginResp.builder().token(token).build();
+        return super.authenticate(user, client);
     }
 
     @Override
@@ -166,7 +176,7 @@ public class SocialLoginHandler extends AbstractLoginHandler<SocialLoginReq> {
     private void sendSecurityMsg(UserDO user) {
         MessageTemplateEnum template = MessageTemplateEnum.SOCIAL_REGISTER;
         MessageReq req = new MessageReq(MessageTypeEnum.SECURITY);
-        req.setTitle(template.getTitle().formatted(projectProperties.getName()));
+        req.setTitle(template.getTitle().formatted(applicationProperties.getName()));
         req.setContent(template.getContent().formatted(user.getNickname()));
         messageService.add(req, CollUtil.toList(user.getId().toString()));
     }

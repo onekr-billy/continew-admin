@@ -37,6 +37,7 @@ import top.continew.admin.system.model.resp.dashboard.DashboardOverviewCommonRes
 import top.continew.admin.system.service.DashboardService;
 import top.continew.admin.system.service.NoticeService;
 import top.continew.starter.core.constant.StringConstants;
+import top.continew.starter.core.util.CollUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -95,10 +96,10 @@ public class DashboardServiceImpl implements DashboardService {
         // 获取省份数据
         String chinaJson = IoUtil.readUtf8(new ClassPathResource("china.json").getInputStream());
         JSONArray jsonArr = JSONUtil.parseObj(chinaJson).getJSONArray("children");
-        List<String> provinceList = jsonArr.stream().map(item -> {
+        List<String> provinceList = CollUtils.mapToList(jsonArr, item -> {
             JSONObject itemJsonObj = JSONUtil.parseObj(item);
             return "%s:%s".formatted(itemJsonObj.getStr("name"), itemJsonObj.getStr("fullname"));
-        }).toList();
+        });
         // 汇总各省份访问数据
         for (String province : provinceList) {
             String[] split = province.split(StringConstants.COLON);
@@ -124,10 +125,9 @@ public class DashboardServiceImpl implements DashboardService {
                 .stream()
                 .map(date -> date.toString(DatePattern.NORM_DATE_FORMAT))
                 .toList();
-            Collection<String> missings = CollUtil.disjunction(all, list.stream()
-                .map(DashboardAccessTrendResp::getDate)
-                .toList());
-            list.addAll(missings.stream().map(missing -> new DashboardAccessTrendResp(missing, 0L, 0L)).toList());
+            Collection<String> missings = CollUtil.disjunction(all, CollUtils
+                .mapToList(list, DashboardAccessTrendResp::getDate));
+            list.addAll(CollUtils.mapToList(missings, missing -> new DashboardAccessTrendResp(missing, 0L, 0L)));
             list.sort(Comparator.comparing(DashboardAccessTrendResp::getDate));
         }
         return list;
@@ -200,10 +200,9 @@ public class DashboardServiceImpl implements DashboardService {
      * @param list 待填充数据
      */
     private void fillMissingDateData(List<String> all, List<DashboardChartCommonResp> list) {
-        Collection<String> missings = CollUtil.disjunction(all, list.stream()
-            .map(DashboardChartCommonResp::getName)
-            .toList());
-        list.addAll(missings.stream().map(missing -> new DashboardChartCommonResp(missing, 0L)).toList());
+        Collection<String> missings = CollUtil.disjunction(all, CollUtils
+            .mapToList(list, DashboardChartCommonResp::getName));
+        list.addAll(CollUtils.mapToList(missings, missing -> new DashboardChartCommonResp(missing, 0L)));
         list.sort(Comparator.comparing(DashboardChartCommonResp::getName));
     }
 

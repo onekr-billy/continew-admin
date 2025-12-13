@@ -19,8 +19,8 @@ package top.continew.admin.system.model.query;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import top.continew.admin.system.enums.FileTypeEnum;
-import top.continew.starter.data.core.annotation.Query;
-import top.continew.starter.data.core.enums.QueryType;
+import top.continew.starter.data.annotation.Query;
+import top.continew.starter.data.enums.QueryType;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -49,11 +49,13 @@ public class FileQuery implements Serializable {
      * 上级目录
      */
     @Schema(description = "上级目录", example = "/")
+    @Query(type = QueryType.EQ)
     private String parentPath;
 
     /**
      * 类型
      */
     @Schema(description = "类型", example = "2")
+    @Query(type = QueryType.EQ)
     private FileTypeEnum type;
 }

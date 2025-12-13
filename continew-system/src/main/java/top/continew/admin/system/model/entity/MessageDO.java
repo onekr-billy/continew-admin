@@ -85,4 +85,15 @@ public class MessageDO implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    /**
+     * 修改时间
+     */
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateTime;
+
+    /**
+     * 是否已删除（0：否；id：是）
+     */
+    private Long deleted;
 }

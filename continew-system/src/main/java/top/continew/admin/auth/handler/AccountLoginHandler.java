@@ -30,15 +30,14 @@ import top.continew.admin.auth.enums.AuthTypeEnum;
 import top.continew.admin.auth.model.req.AccountLoginReq;
 import top.continew.admin.auth.model.resp.LoginResp;
 import top.continew.admin.common.constant.CacheConstants;
-import top.continew.admin.common.constant.SysConstants;
+import top.continew.admin.common.constant.GlobalConstants;
 import top.continew.admin.common.util.SecureUtils;
 import top.continew.admin.system.enums.PasswordPolicyEnum;
 import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.model.resp.ClientResp;
 import top.continew.starter.cache.redisson.util.RedisUtils;
-import top.continew.starter.core.util.ExceptionUtils;
-import top.continew.starter.core.validation.CheckUtils;
-import top.continew.starter.core.validation.ValidationUtils;
+import top.continew.starter.core.util.validation.CheckUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 import java.time.Duration;
 
@@ -58,20 +57,18 @@ public class AccountLoginHandler extends AbstractLoginHandler<AccountLoginReq> {
     @Override
     public LoginResp login(AccountLoginReq req, ClientResp client, HttpServletRequest request) {
         // 解密密码
-        String rawPassword = ExceptionUtils.exToNull(() -> SecureUtils.decryptByRsaPrivateKey(req.getPassword()));
-        ValidationUtils.throwIfBlank(rawPassword, "密码解密失败");
+        String password = SecureUtils.decryptPasswordByRsaPrivateKey(req.getPassword(), "密码解密失败");
         // 验证用户名密码
         String username = req.getUsername();
         UserDO user = userService.getByUsername(username);
-        boolean isError = ObjectUtil.isNull(user) || !passwordEncoder.matches(rawPassword, user.getPassword());
+        boolean isError = ObjectUtil.isNull(user) || !passwordEncoder.matches(password, user.getPassword());
         // 检查账号锁定状态
         this.checkUserLocked(req.getUsername(), request, isError);
         ValidationUtils.throwIf(isError, "用户名或密码不正确");
         // 检查用户状态
         super.checkUserStatus(user);
         // 执行认证
-        String token = this.authenticate(user, client);
-        return LoginResp.builder().token(token).build();
+        return super.authenticate(user, client);
     }
 
     @Override
@@ -79,7 +76,7 @@ public class AccountLoginHandler extends AbstractLoginHandler<AccountLoginReq> {
         super.preLogin(req, client, request);
         // 校验验证码
         int loginCaptchaEnabled = optionService.getValueByCode2Int("LOGIN_CAPTCHA_ENABLED");
-        if (SysConstants.YES.equals(loginCaptchaEnabled)) {
+        if (GlobalConstants.Boolean.YES.equals(loginCaptchaEnabled)) {
             ValidationUtils.throwIfBlank(req.getCaptcha(), "验证码不能为空");
             ValidationUtils.throwIfBlank(req.getUuid(), "验证码标识不能为空");
             String captchaKey = CacheConstants.CAPTCHA_KEY_PREFIX + req.getUuid();
@@ -105,7 +102,7 @@ public class AccountLoginHandler extends AbstractLoginHandler<AccountLoginReq> {
     private void checkUserLocked(String username, HttpServletRequest request, boolean isError) {
         // 不锁定
         int maxErrorCount = optionService.getValueByCode2Int(PasswordPolicyEnum.PASSWORD_ERROR_LOCK_COUNT.name());
-        if (maxErrorCount <= SysConstants.NO) {
+        if (maxErrorCount <= GlobalConstants.Boolean.NO) {
             return;
         }
         // 检测是否已被锁定

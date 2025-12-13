@@ -18,7 +18,7 @@ VALUES
 (1018, '重置密码', 1010, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:user:resetPwd', 8, 1, 1, NOW()),
 (1019, '分配角色', 1010, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:user:updateRole', 9, 1, 1, NOW()),
 
-(1030, '角色管理', 1000, 2, '/system/role', 'SystemRole', 'system/role/index', NULL, 'user-group', b'0', b'0', b'0', NULL, 2, 1, 1, NOW()),
+(1030, '角色管理', 1000, 2, '/system/role', 'SystemRole', 'system/role/index', NULL, 'user-management', b'0', b'0', b'0', NULL, 2, 1, 1, NOW()),
 (1031, '列表', 1030, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:role:list', 1, 1, 1, NOW()),
 (1032, '详情', 1030, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:role:get', 2, 1, 1, NOW()),
 (1033, '新增', 1030, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:role:create', 3, 1, 1, NOW()),
@@ -61,6 +61,10 @@ VALUES
 (1116, '下载', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:file:download', 6, 1, 1, NOW()),
 (1117, '创建文件夹', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:file:createDir', 7, 1, 1, NOW()),
 (1118, '计算文件夹大小', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:file:calcDirSize', 8, 1, 1, NOW()),
+(1119, '回收站文件列表', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:fileRecycle:list', 9, 1, 1, NOW()),
+(1120, '还原回收站文件', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:fileRecycle:restore', 10, 1, 1, NOW()),
+(1121, '删除回收站文件', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:fileRecycle:delete', 11, 1, 1, NOW()),
+(1122, '清空回收站', 1110, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:fileRecycle:clean', 12, 1, 1, NOW()),
 
 (1130, '字典管理', 1000, 2, '/system/dict', 'SystemDict', 'system/dict/index', NULL, 'bookmark', b'0', b'0', b'0', NULL, 7, 1, 1, NOW()),
 (1131, '列表', 1130, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'system:dict:list', 1, 1, 1, NOW()),
@@ -164,8 +168,9 @@ VALUES
 INSERT INTO `sys_role`
 (`id`, `name`, `code`, `data_scope`, `description`, `sort`, `is_system`, `create_user`, `create_time`)
 VALUES
-(1, '系统管理员', 'admin', 1, '系统初始角色', 1, b'1', 1, NOW()),
-(2, '普通用户', 'general', 4, '系统初始角色', 2, b'1', 1, NOW()),
+(1, '超级管理员', 'super_admin', 1, '系统初始角色', 0, b'1', 1, NOW()),
+(2, '系统管理员', 'sys_admin', 1, NULL, 1, b'0', 1, NOW()),
+(3, '普通用户', 'general', 4, NULL, 2, b'0', 1, NOW()),
 (547888897925840927, '测试人员', 'tester', 5, NULL, 3, b'0', 1, NOW()),
 (547888897925840928, '研发人员', 'developer', 4, NULL, 4, b'0', 1, NOW());
 
@@ -173,17 +178,20 @@ VALUES
 INSERT INTO `sys_user`
 (`id`, `username`, `nickname`, `password`, `gender`, `email`, `phone`, `avatar`, `description`, `status`, `is_system`, `pwd_reset_time`, `dept_id`, `create_user`, `create_time`)
 VALUES
-(1, 'admin', '系统管理员', '{bcrypt}$2a$10$4jGwK2BMJ7FgVR.mgwGodey8.xR8FLoU1XSXpxJ9nZQt.pufhasSa', 1, '42190c6c5639d2ca4edb4150a35e058559ccf8270361a23745a2fd285a273c28', '5bda89a4609a65546422ea56bfe5eab4', NULL, '系统初始用户', 1, b'1', NOW(), 1, 1, NOW()),
+(1, 'admin', '超级管理员', '{bcrypt}$2a$10$4jGwK2BMJ7FgVR.mgwGodey8.xR8FLoU1XSXpxJ9nZQt.pufhasSa', 1, '42190c6c5639d2ca4edb4150a35e058559ccf8270361a23745a2fd285a273c28', '5bda89a4609a65546422ea56bfe5eab4', NULL, '系统初始用户', 1, b'1', NOW(), 1, 1, NOW()),
 (547889293968801822, 'test', '测试员', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 2, NULL, NULL, NULL, NULL, 1, b'0', NOW(), 547887852587843593, 1, NOW()),
 (547889293968801823, 'Charles', 'Charles', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '代码写到极致，就是艺术。', 1, b'0', NOW(), 547887852587843595, 1, NOW()),
-(547889293968801824, 'Yoofff', 'Yoofff', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '弱小和无知不是生存的障碍，傲慢才是。', 1, b'0', NOW(), 1, 1, NOW()),
+(547889293968801824, 'Yoofff', 'Yoofff', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '弱小和无知不是生存的障碍，傲慢才是。', 2, b'0', NOW(), 1, 1, NOW()),
 (547889293968801825, 'Jasmine', 'Jasmine', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '干就完事了！', 1, b'0', NOW(), 547887852587843605, 1, NOW()),
 (547889293968801826, 'AutumnSail', '秋登', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '只有追求完美，才能创造奇迹。', 1, b'0', NOW(), 547887852587843602, 1, NOW()),
 (547889293968801827, 'Kils', 'Kils', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '可以摆烂，但不能真的菜。', 1, b'0', NOW(), 547887852587843599, 1, NOW()),
 (547889293968801828, 'mochou', '莫愁', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '万事莫愁，皆得所愿。', 1, b'0', NOW(), 547887852587843602, 1, NOW()),
 (547889293968801829, 'Jing', 'MS-Jing', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '路虽远，行则将至。', 2, b'0', NOW(), 547887852587843599, 1, NOW()),
 (547889293968801830, 'domw', '梓陌', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '胜利是奖赏，挫折是常态。', 1, b'0', NOW(), 547887852587843608, 1, NOW()),
-(547889293968801831, 'xtanyu', '小熊', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '不想上班。', 1, b'0', NOW(), 547887852587843611, 1, NOW());
+(547889293968801831, 'xtanyu', '小熊', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '不想上班。', 1, b'0', NOW(), 547887852587843611, 1, NOW()),
+(547889293968801832, 'ppxb', '番茄', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, 'one day smile one day cry.', 1, b'0', NOW(), 547887852587843599, 1, NOW()),
+(547889293968801833, 'luoqiz', '老罗', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '行者无疆，丈量四方。', 1, b'0', NOW(), 1, 1, NOW()),
+(547889293968801834, 'lishuyanla', '颜如玉', '{bcrypt}$2a$10$xAsoeMJ.jc/kSxhviLAg7.j2iFrhi6yYAdniNdjLiIUWU/BRZl2Ti', 1, NULL, NULL, NULL, '书中自有颜如玉，世间多是李莫愁。', 1, b'0', NOW(), 1, 1, NOW());
 
 -- 初始化默认参数
 INSERT INTO `sys_option`
@@ -246,7 +254,10 @@ VALUES
 (8, 547889293968801828, 547888897925840928),
 (9, 547889293968801829, 547888897925840928),
 (10, 547889293968801830, 547888897925840928),
-(11, 547889293968801831, 547888897925840928);
+(11, 547889293968801831, 547888897925840928),
+(12, 547889293968801832, 547888897925840928),
+(13, 547889293968801833, 547888897925840928),
+(14, 547889293968801834, 547888897925840928);
 
 -- 初始化默认角色和菜单关联数据
 INSERT INTO `sys_role_menu`
@@ -271,10 +282,10 @@ INSERT INTO `sys_role_dept` (`role_id`, `dept_id`) VALUES (547888897925840927, 5
 
 -- 初始化默认存储
 INSERT INTO `sys_storage`
-(`id`, `name`, `code`, `type`, `access_key`, `secret_key`, `endpoint`, `bucket_name`, `domain`, `description`, `is_default`, `sort`, `status`, `create_user`, `create_time`)
+(`id`, `name`, `code`, `type`, `access_key`, `secret_key`, `endpoint`, `bucket_name`, `domain`, `recycle_bin_enabled`, `recycle_bin_path`, `description`, `is_default`, `sort`, `status`, `create_user`, `create_time`)
 VALUES
-(1, '开发环境', 'local_dev', 1, NULL, NULL, NULL, 'C:/continew-admin/data/file/', 'http://localhost:8000/file/', '本地存储', b'1', 1, 1, 1, NOW()),
-(2, '生产环境', 'local_prod', 1, NULL, NULL, NULL, '../data/file/', 'http://api.continew.top/file/', '本地存储', b'0', 2, 2, 1, NOW());
+(1, '开发环境', 'local_dev', 1, NULL, NULL, NULL, 'C:/continew-admin/data/file/', 'http://localhost:8000/file/', b'1', '.RECYCLE.BIN/', '本地存储', b'1', 1, 1, 1, NOW()),
+(2, '生产环境', 'local_prod', 1, NULL, NULL, NULL, '../data/file/', 'http://api.continew.top/file/', b'1', '.RECYCLE.BIN/', '本地存储', b'0', 2, 2, 1, NOW());
 
 -- 初始化客户端数据
 INSERT INTO `sys_client`

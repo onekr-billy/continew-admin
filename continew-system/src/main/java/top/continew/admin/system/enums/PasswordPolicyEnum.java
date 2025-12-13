@@ -25,11 +25,11 @@ import cn.hutool.extra.spring.SpringUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import top.continew.admin.common.constant.RegexConstants;
-import top.continew.admin.common.constant.SysConstants;
+import top.continew.admin.common.constant.GlobalConstants;
 import top.continew.admin.system.model.entity.user.UserDO;
 import top.continew.admin.system.service.OptionService;
 import top.continew.admin.system.service.UserPasswordHistoryService;
-import top.continew.starter.core.validation.ValidationUtils;
+import top.continew.starter.core.util.validation.ValidationUtils;
 
 import java.util.Map;
 
@@ -47,7 +47,7 @@ public enum PasswordPolicyEnum {
     /**
      * 密码错误锁定阈值
      */
-    PASSWORD_ERROR_LOCK_COUNT("密码错误锁定阈值取值范围为 %d-%d", SysConstants.NO, 10, "由于您连续 %s 次输入错误密码，账号已被锁定 %s 分钟，预计解锁时间为 %s，请稍后再试"),
+    PASSWORD_ERROR_LOCK_COUNT("密码错误锁定阈值取值范围为 %d-%d", GlobalConstants.Boolean.NO, 10, "由于您连续 %s 次输入错误密码，账号已被锁定 %s 分钟，预计解锁时间为 %s，请稍后再试"),
 
     /**
      * 账号锁定时长（分钟）
@@ -57,12 +57,12 @@ public enum PasswordPolicyEnum {
     /**
      * 密码有效期（天）
      */
-    PASSWORD_EXPIRATION_DAYS("密码有效期取值范围为 %d-%d 天", SysConstants.NO, 999, null),
+    PASSWORD_EXPIRATION_DAYS("密码有效期取值范围为 %d-%d 天", GlobalConstants.Boolean.NO, 999, null),
 
     /**
      * 密码到期提醒（天）
      */
-    PASSWORD_EXPIRATION_WARNING_DAYS("密码到期提醒取值范围为 %d-%d 天", SysConstants.NO, 998, null) {
+    PASSWORD_EXPIRATION_WARNING_DAYS("密码到期提醒取值范围为 %d-%d 天", GlobalConstants.Boolean.NO, 998, null) {
         @Override
         public void validateRange(int value, Map<String, String> policyMap) {
             if (CollUtil.isEmpty(policyMap)) {
@@ -72,7 +72,7 @@ public enum PasswordPolicyEnum {
             Integer passwordExpirationDays = ObjectUtil.defaultIfNull(Convert.toInt(policyMap
                 .get(PASSWORD_EXPIRATION_DAYS.name())), SpringUtil.getBean(OptionService.class)
                     .getValueByCode2Int(PASSWORD_EXPIRATION_DAYS.name()));
-            if (passwordExpirationDays > SysConstants.NO) {
+            if (passwordExpirationDays > GlobalConstants.Boolean.NO) {
                 ValidationUtils.throwIf(value >= passwordExpirationDays, "密码到期提醒时间应小于密码有效期");
                 return;
             }
@@ -98,16 +98,17 @@ public enum PasswordPolicyEnum {
     /**
      * 密码是否必须包含特殊字符
      */
-    PASSWORD_REQUIRE_SYMBOLS("密码是否必须包含特殊字符取值只能为是（%d）或否（%d）", SysConstants.NO, SysConstants.YES, "密码必须包含特殊字符") {
+    PASSWORD_REQUIRE_SYMBOLS("密码是否必须包含特殊字符取值只能为是（%d）或否（%d）", GlobalConstants.Boolean.NO, GlobalConstants.Boolean.YES, "密码必须包含特殊字符") {
         @Override
         public void validateRange(int value, Map<String, String> policyMap) {
-            ValidationUtils.throwIf(value != SysConstants.YES && value != SysConstants.NO, this.getDescription()
-                .formatted(SysConstants.YES, SysConstants.NO));
+            ValidationUtils.throwIf(value != GlobalConstants.Boolean.YES && value != GlobalConstants.Boolean.NO, this
+                .getDescription()
+                .formatted(GlobalConstants.Boolean.YES, GlobalConstants.Boolean.NO));
         }
 
         @Override
         public void validate(String password, int value, UserDO user) {
-            ValidationUtils.throwIf(value == SysConstants.YES && !ReUtil
+            ValidationUtils.throwIf(value == GlobalConstants.Boolean.YES && !ReUtil
                 .isMatch(RegexConstants.SPECIAL_CHARACTER, password), this.getMsg());
         }
     },
@@ -115,16 +116,17 @@ public enum PasswordPolicyEnum {
     /**
      * 密码是否允许包含用户名
      */
-    PASSWORD_ALLOW_CONTAIN_USERNAME("密码是否允许包含用户名取值只能为是（%d）或否（%d）", SysConstants.NO, SysConstants.YES, "密码不允许包含正反序用户名") {
+    PASSWORD_ALLOW_CONTAIN_USERNAME("密码是否允许包含用户名取值只能为是（%d）或否（%d）", GlobalConstants.Boolean.NO, GlobalConstants.Boolean.YES, "密码不允许包含正反序用户名") {
         @Override
         public void validateRange(int value, Map<String, String> policyMap) {
-            ValidationUtils.throwIf(value != SysConstants.YES && value != SysConstants.NO, this.getDescription()
-                .formatted(SysConstants.YES, SysConstants.NO));
+            ValidationUtils.throwIf(value != GlobalConstants.Boolean.YES && value != GlobalConstants.Boolean.NO, this
+                .getDescription()
+                .formatted(GlobalConstants.Boolean.YES, GlobalConstants.Boolean.NO));
         }
 
         @Override
         public void validate(String password, int value, UserDO user) {
-            if (value <= SysConstants.NO) {
+            if (value <= GlobalConstants.Boolean.NO) {
                 String username = user.getUsername();
                 ValidationUtils.throwIf(StrUtil.containsAnyIgnoreCase(password, username, StrUtil
                     .reverse(username)), this.getMsg());

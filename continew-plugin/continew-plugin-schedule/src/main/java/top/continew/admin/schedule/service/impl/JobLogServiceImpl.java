@@ -20,16 +20,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.continew.admin.schedule.api.JobBatchApi;
 import top.continew.admin.schedule.api.JobClient;
-import top.continew.admin.schedule.model.JobInstanceLogPageResult;
-import top.continew.admin.schedule.model.query.JobInstanceLogQuery;
-import top.continew.admin.schedule.model.query.JobInstanceQuery;
 import top.continew.admin.schedule.model.query.JobLogQuery;
-import top.continew.admin.schedule.model.resp.JobInstanceResp;
 import top.continew.admin.schedule.model.resp.JobLogResp;
 import top.continew.admin.schedule.service.JobLogService;
 import top.continew.starter.extension.crud.model.resp.PageResp;
-
-import java.util.List;
 
 /**
  * 任务日志业务实现
@@ -58,15 +52,5 @@ public class JobLogServiceImpl implements JobLogService {
     @Override
     public boolean retry(Long id) {
         return Boolean.TRUE.equals(jobClient.request(() -> jobBatchApi.retry(id)));
-    }
-
-    @Override
-    public List<JobInstanceResp> listInstance(JobInstanceQuery query) {
-        return jobClient.requestPage(() -> jobBatchApi.pageTask(query)).getList();
-    }
-
-    @Override
-    public JobInstanceLogPageResult pageInstanceLog(JobInstanceLogQuery query) {
-        return jobClient.request(() -> jobBatchApi.pageLog(query));
     }
 }
