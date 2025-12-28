@@ -97,7 +97,7 @@ jetcache:
 
 --- ### 接口文档配置
 ## 接口文档增强配置
-knife4j:
+nextdoc4j:
   # 开启生产环境屏蔽
   production: ${application.production}
 
@@ -222,22 +222,8 @@ continew-starter.messaging.websocket:
   allowed-origins:
     - ${application.url}
 
---- ### Sa-Token 扩展配置
-sa-token.extension:
-  # 安全配置：排除（放行）路径配置
-  security.excludes:
-    - /error
-    # 静态资源
-    - /*.html
-    - /*/*.html
-    - /*/*.css
-    - /*/*.js
-    - /websocket/**
-    # 本地存储资源
-    - /file/**
-
 --- ### Just Auth 配置
-justauth:
+continew-starter.justauth:
   enabled: true
   type:
     WECHAT_OPEN:
@@ -254,6 +240,20 @@ justauth:
       redirect-uri: ${application.url}/social/callback?source=github
   cache:
     type: REDIS
+
+--- ### Sa-Token 扩展配置
+sa-token.extension:
+  # 安全配置：排除（放行）路径配置
+  security.excludes:
+    - /error
+    # 静态资源
+    - /*.html
+    - /*/*.html
+    - /*/*.css
+    - /*/*.js
+    - /websocket/**
+    # 本地存储资源
+    - /file/**
 
 --- ### Snail Job 配置
 snail-job:

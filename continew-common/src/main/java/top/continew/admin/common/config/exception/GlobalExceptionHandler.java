@@ -25,6 +25,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -38,8 +39,6 @@ import top.continew.starter.core.exception.BadRequestException;
 import top.continew.starter.core.exception.BaseException;
 import top.continew.starter.core.exception.BusinessException;
 import top.continew.starter.web.model.R;
-
-import org.springframework.validation.BindException;
 
 /**
  * 全局异常处理器
