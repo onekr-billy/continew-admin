@@ -213,29 +213,8 @@ continew-starter.messaging.websocket:
   # 配置允许跨域的域名
   allowed-origins: '*'
 
---- ### Sa-Token 扩展配置
-sa-token.extension:
-  # 安全配置：排除（放行）路径配置
-  security.excludes:
-    - /error
-    # 静态资源
-    - /*.html
-    - /*/*.html
-    - /*/*.css
-    - /*/*.js
-    - /websocket/**
-    # 接口文档相关资源
-    - /favicon.ico
-    - /doc.html
-    - /webjars/**
-    - /swagger-ui/**
-    - /swagger-resources/**
-    - /*/api-docs/**
-    # 本地存储资源
-    - /file/**
-
 --- ### Just Auth 配置
-justauth:
+continew-starter.justauth:
   enabled: true
   type:
     WECHAT_OPEN:
@@ -252,6 +231,28 @@ justauth:
       redirect-uri: ${application.url}/social/callback?source=github
   cache:
     type: REDIS
+
+--- ### Sa-Token 扩展配置
+sa-token.extension:
+  # 安全配置：排除（放行）路径配置
+  security.excludes:
+    - /error
+    # 静态资源
+    - /*.html
+    - /*/*.html
+    - /*/*.css
+    - /*/*.js
+    - /websocket/**
+    # 接口文档相关资源
+    - /favicon.ico
+    - /doc.html
+    - /nextdoc/**
+    - /webjars/**
+    - /swagger-ui/**
+    - /swagger-resources/**
+    - /*/api-docs/**
+    # 本地存储资源
+    - /file/**
 
 --- ### Snail Job 配置
 snail-job:

@@ -7,7 +7,6 @@ application:
   description: 持续迭代优化的前后端分离中后台管理系统框架，开箱即用，持续提供舒适的开发体验。
   # 版本
   version: 4.2.0-SNAPSHOT
-  starter: 2.14.0
   # 基本包
   base-package: top.continew.admin
   ## 作者信息配置
@@ -123,15 +122,29 @@ springdoc:
         name: ${sa-token.token-name}
         scheme: ${sa-token.token-prefix}
 ## 接口文档增强配置
-knife4j:
-  enable: true
-  setting:
-    # 是否显示默认的 footer（默认 true，显示）
-    enable-footer: false
-    # 是否自定义 footer（默认 false，非自定义）
-    enable-footer-custom: true
-    # 自定义 footer 内容，支持 Markdown 语法
-    footer-custom-content: 'Copyright © 2022-present [${application.contact.name}](${application.contact.url})&nbsp;⋅&nbsp;[${application.name}](${application.url}) v${application.version}'
+nextdoc4j:
+  # 启用开关
+  enabled: true
+  # 扩展配置
+  extension:
+    # 扩展开关
+    enabled: true
+    # 品牌配置
+    brand:
+      # logo 展示
+      logo: classpath:favicon.ico
+      # 标题
+      title: ${application.name}
+      # 自定义 footer 内容
+      footer-text: 'Copyright © 2022-present [${application.contact.name}](${application.contact.url})&nbsp;⋅&nbsp;[${application.name}](${application.url}) v${application.version}'
+  # 插件配置
+  plugin:
+    # 枚举展示开关
+    enum:
+      enabled: true
+    # 认证展示和 sa-token 权限码展示开关
+    security:
+      enabled: true
 
 --- ### 全局响应配置
 continew-starter.web.response:
