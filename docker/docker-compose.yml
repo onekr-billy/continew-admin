@@ -50,6 +50,7 @@ services:
     command: 'redis-server /usr/local/redis/config/redis.conf --appendonly yes'
   continew-server:
     build: ./continew-admin
+    image: continew-server:4.2.0-SNAPSHOT
     container_name: continew-server
     restart: always
     ports:
@@ -94,11 +95,12 @@ services:
       TZ: Asia/Shanghai
   schedule-server:
     build: ./schedule-server
+    image: schedule-server:1.8.0
     container_name: schedule-server
     restart: always
     ports:
       - '18001:18001'
-      - '1788:1788'
+      - '17888:17888'
     volumes:
       - /docker/schedule-server/logs/:/app/logs/
     environment:
