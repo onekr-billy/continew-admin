@@ -63,6 +63,7 @@ services:
       - /docker/continew-admin/lib/:/app/lib/
     environment:
       TZ: Asia/Shanghai
+      PROFILES_ACTIVE: prod
       DB_HOST: 172.17.0.1
       DB_PORT: 3306
       DB_USER: 你的数据库用户名
