@@ -46,7 +46,7 @@ spring:
   ## 环境配置
   profiles:
     # 启用的环境
-    active: dev
+    active: ${PROFILES_ACTIVE:dev}
     include:
       - generator
   main:
