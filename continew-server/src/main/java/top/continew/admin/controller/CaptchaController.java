@@ -214,7 +214,7 @@ public class CaptchaController {
         // 获取短信配置
         SmsConfigDO smsConfig = smsConfigService.getDefaultConfig();
         SmsBlend smsBlend = smsConfig != null
-            ? SmsFactory.getBySupplier(smsConfig.getSupplier())
+            ? SmsFactory.getSmsBlend(smsConfig.getId().toString())
             : SmsFactory.getSmsBlend();
         Map<String, String> messageMap = MapUtil.newHashMap(2, true);
         messageMap.put(captchaSms.getCodeKey(), captcha);
